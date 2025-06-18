@@ -1,12 +1,26 @@
 { lib, tools, ... }:
 
 let
-  inherit (lib) mkOption mkEnableOption mkIf types;
+  inherit (lib)
+    mkOption
+    mkEnableOption
+    mkIf
+    types
+    ;
   mcpServerOptionsType = import ./nix/lib/mcp-server-options.nix lib;
 
   # Helper to transform a simple preset definition into a full module
-  mkPresetModule = { name, description ? "MCP integration for ${name}", options ? {}, env ? (_: {}), command, args ? (_: []) }: 
-    { config, ... }: {
+  mkPresetModule =
+    {
+      name,
+      description ? "MCP integration for ${name}",
+      options ? { },
+      env ? (_: { }),
+      command,
+      args ? (_: [ ]),
+    }:
+    { config, ... }:
+    {
       options = {
         enable = mkEnableOption description;
 
@@ -18,7 +32,7 @@ let
 
         mcpServer = lib.mkOption {
           type = lib.types.submodule mcpServerOptionsType;
-          default = {};
+          default = { };
           description = lib.mdDoc "MCP server configuration";
         };
       } // options;
@@ -78,10 +92,17 @@ let
     fetch = {
       name = "Fetch";
       command = tools.getToolPath "fetch";
-      args = config:
-        (lib.optionals (config.userAgent != null) ["--user-agent" config.userAgent]) ++
-        (lib.optionals (config.proxyURL != null) ["--proxy-url" config.proxyURL]) ++
-        (lib.optionals config.ignoreRobotsTxt ["--ignore-robots-txt"]);
+      args =
+        config:
+        (lib.optionals (config.userAgent != null) [
+          "--user-agent"
+          config.userAgent
+        ])
+        ++ (lib.optionals (config.proxyURL != null) [
+          "--proxy-url"
+          config.proxyURL
+        ])
+        ++ (lib.optionals config.ignoreRobotsTxt [ "--ignore-robots-txt" ]);
       options = {
         proxyURL = mkOption {
           type = types.nullOr types.str;
@@ -112,9 +133,12 @@ let
     time = {
       name = "Time";
       command = tools.getToolPath "time";
-      args = config:
-        lib.optionals (config.localTimezone != null)
-          [ "--local-timezone" config.localTimezone ];
+      args =
+        config:
+        lib.optionals (config.localTimezone != null) [
+          "--local-timezone"
+          config.localTimezone
+        ];
 
       options = {
         localTimezone = mkOption {
@@ -128,12 +152,19 @@ let
     github = {
       name = "GitHub";
       command = tools.getToolPath "github";
-      args = config: [ "stdio" "--toolsets" (builtins.concatStringsSep "," config.toolsets) ];
-      env = config: {
-        GITHUB_PERSONAL_ACCESS_TOKEN_FILEPATH = config.tokenFilepath;
-      } // (lib.optionalAttrs (config.baseURL != null && config.baseURL != "") {
-        GITHUB_HOST = config.baseURL;
-      });
+      args = config: [
+        "stdio"
+        "--toolsets"
+        (builtins.concatStringsSep "," config.toolsets)
+      ];
+      env =
+        config:
+        {
+          GITHUB_PERSONAL_ACCESS_TOKEN_FILEPATH = config.tokenFilepath;
+        }
+        // (lib.optionalAttrs (config.baseURL != null && config.baseURL != "") {
+          GITHUB_HOST = config.baseURL;
+        });
       options = {
         tokenFilepath = mkOption {
           type = types.str;
@@ -148,10 +179,20 @@ let
         };
 
         toolsets = mkOption {
-          type = types.nonEmptyListOf (types.enum [
-            "repos" "issues" "users" "pull_requests" "code_security"
-          ]);
-          default = ["repos" "pull_requests" "users"];
+          type = types.nonEmptyListOf (
+            types.enum [
+              "repos"
+              "issues"
+              "users"
+              "pull_requests"
+              "code_security"
+            ]
+          );
+          default = [
+            "repos"
+            "pull_requests"
+            "users"
+          ];
           description = lib.mdDoc "List of GitHub toolsets to enable";
         };
       };
@@ -160,9 +201,13 @@ let
     grafana = {
       name = "Grafana";
       command = tools.getToolPath "grafana";
-      args = config:
-        [ "-enabled-tools" (builtins.concatStringsSep "," config.toolsets) ] ++
-        (lib.optionals config.debug ["-debug"]);
+      args =
+        config:
+        [
+          "-enabled-tools"
+          (builtins.concatStringsSep "," config.toolsets)
+        ]
+        ++ (lib.optionals config.debug [ "-debug" ]);
 
       env = config: {
         GRAFANA_URL = config.baseURL;
@@ -183,12 +228,26 @@ let
         };
 
         toolsets = mkOption {
-          type = types.nonEmptyListOf (types.enum [
-            "search" "datasource" "incident" "prometheus"
-            "loki" "alerting" "dashboard" "oncall" "asserts"
-            "sift" "admin"
-          ]);
-          default = ["prometheus" "search" "datasource"];
+          type = types.nonEmptyListOf (
+            types.enum [
+              "search"
+              "datasource"
+              "incident"
+              "prometheus"
+              "loki"
+              "alerting"
+              "dashboard"
+              "oncall"
+              "asserts"
+              "sift"
+              "admin"
+            ]
+          );
+          default = [
+            "prometheus"
+            "search"
+            "datasource"
+          ];
           description = lib.mdDoc "List of Grafana toolsets to enable";
         };
 
@@ -204,4 +263,4 @@ let
   };
 
 in
-  lib.mapAttrs (_: mkPresetModule) presets
+lib.mapAttrs (_: mkPresetModule) presets

@@ -32,7 +32,8 @@
     systems.flake = false;
   };
 
-  outputs = inputs:
+  outputs =
+    inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       systems = import inputs.systems;
 
@@ -47,24 +48,28 @@
         enable = true;
       };
 
-      perSystem = {system, config, ...}: {
-        _module.args.pkgs = import inputs.nixpkgs {
-          inherit system;
-          config.allowUnfree = true;
-          overlays = [ inputs.self.overlays.default ];
-        };
+      perSystem =
+        { system, config, ... }:
+        {
+          _module.args.pkgs = import inputs.nixpkgs {
+            inherit system;
+            config.allowUnfree = true;
+            overlays = [ inputs.self.overlays.default ];
+          };
 
-        # overlayAttrs builds the default overlay.
-        overlayAttrs = config.packages // {
-          # Add necessary inputs to build packages from this flake.
-          inherit (inputs) uv2nix pyproject pyproject-build-systems;
-        };
+          # overlayAttrs builds the default overlay.
+          overlayAttrs = config.packages // {
+            # Add necessary inputs to build packages from this flake.
+            inherit (inputs) uv2nix pyproject pyproject-build-systems;
+          };
 
-        devenv.shells.default = {pkgs, ...}: {
-          packages = [ pkgs.claude-code ];
-          git-hooks.hooks.nixfmt-rfc-style.enable = true;
-        };
+          devenv.shells.default =
+            { pkgs, ... }:
+            {
+              packages = [ pkgs.claude-code ];
+              git-hooks.hooks.nixfmt-rfc-style.enable = true;
+            };
 
-      };
+        };
     };
 }

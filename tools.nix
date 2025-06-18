@@ -1,9 +1,15 @@
-{ pkgs, lib, inputs, extraTools ? {} }:
+{
+  pkgs,
+  lib,
+  inputs,
+  extraTools ? { },
+}:
 
 let
-  wrapWithCredentialFiles = pkgs.callPackage ./nix/lib/wrapWithCredentialFiles.nix {};
+  wrapWithCredentialFiles = pkgs.callPackage ./nix/lib/wrapWithCredentialFiles.nix { };
 
-  mkTool = { package, binary }:
+  mkTool =
+    { package, binary }:
     {
       inherit package binary;
       path = "${lib.getBin package}/bin/${binary}";
@@ -17,25 +23,35 @@ let
     inherit mkTool;
 
     # Function to get a tool by name, with error checking
-    getTool = name: 
-      let tool = builtins.getAttr name tools;
-      in if tool.package == null
-         then throw "Tool ${name} is not available in your mcp tools configuration"
-         else tool.package;
-    
+    getTool =
+      name:
+      let
+        tool = builtins.getAttr name tools;
+      in
+      if tool.package == null then
+        throw "Tool ${name} is not available in your mcp tools configuration"
+      else
+        tool.package;
+
     # Function to get a tool's command path
-    getToolPath = name: 
-      let tool = builtins.getAttr name tools;
-      in if tool.package == null
-         then throw "Tool ${name} is not available in your mcp tools configuration"
-         else tool.path;
-    
+    getToolPath =
+      name:
+      let
+        tool = builtins.getAttr name tools;
+      in
+      if tool.package == null then
+        throw "Tool ${name} is not available in your mcp tools configuration"
+      else
+        tool.path;
+
     # Function to create a new tools set with additional tools
-    extend = newExtraTools: import ./tools.nix { 
-      inherit pkgs lib inputs; 
-      extraTools = extraTools // newExtraTools; 
-    };
-    
+    extend =
+      newExtraTools:
+      import ./tools.nix {
+        inherit pkgs lib inputs;
+        extraTools = extraTools // newExtraTools;
+      };
+
   };
 
   baseTools = {
@@ -55,7 +71,7 @@ let
       # from a file and populate it on the GITHUB_PERSONAL_ACCESS_TOKEN.
       package = wrapWithCredentialFiles {
         package = pkgs.github-mcp-server;
-        credentialEnvs = ["GITHUB_PERSONAL_ACCESS_TOKEN"];
+        credentialEnvs = [ "GITHUB_PERSONAL_ACCESS_TOKEN" ];
       };
       binary = "github-mcp-server";
     };
@@ -99,4 +115,4 @@ let
   tools = baseTools // extraTools;
 
 in
-  tools // toolsFunctions
+tools // toolsFunctions
