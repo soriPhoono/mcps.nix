@@ -1,6 +1,7 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/release-25.05";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
     nixDir.url = "github:roman/nixDir/v3";
@@ -58,11 +59,17 @@
           };
 
           # overlayAttrs builds the default overlay.
-          overlayAttrs = config.packages // {
-            # Add necessary inputs to build packages from this flake.
-            inherit (inputs) uv2nix pyproject pyproject-build-systems;
-            inherit (inputs.self.packages.${system}) claude-code;
-          };
+          overlayAttrs =
+            let
+              unstable-pkgs = import inputs.nixpkgs-unstable { inherit system; };
+            in
+            config.packages
+            // {
+              # Add necessary inputs to build packages from this flake.
+              inherit (inputs) uv2nix pyproject pyproject-build-systems;
+              inherit (inputs.self.packages.${system}) claude-code;
+              inherit (unstable-pkgs) github-mcp-server;
+            };
 
           devenv.shells.default =
             { pkgs, config, ... }:
