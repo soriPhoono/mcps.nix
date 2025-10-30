@@ -8,11 +8,11 @@
 let
   inherit (lib)
     mkOption
-    mkEnableOption
     mkIf
     types
     ;
 
+  claudeCfg = config.programs.claude-code;
   cfg = config.programs.claude-code;
 
   # ----------------------
@@ -35,7 +35,7 @@ let
 
   presetOptionTypes = lib.mapAttrs (
     name: preset:
-    lib.mkOption {
+    mkOption {
       type = lib.types.submodule preset;
       default = { };
       description = lib.mdDoc (preset.meta.description or "MCP preset for ${name}");
@@ -47,11 +47,11 @@ let
   # ----------------------
   enabledPresetServers =
     let
-      enabledPresets = lib.filterAttrs (name: preset: name != "servers" && preset.enable) cfg.mcp;
+      enabledPresets = lib.filterAttrs (name: preset: name != "servers" && preset.enable) cfg.mcps;
     in
     lib.mapAttrs (_: preset: preset.mcpServer) enabledPresets;
 
-  allServerConfigs = enabledPresetServers // cfg.mcp.servers;
+  allServerConfigs = enabledPresetServers // cfg.mcps.servers;
 
   # ----------------------
   # MCP Sync Script Generation
@@ -95,69 +95,30 @@ let
 
 in
 {
-  options.programs.claude-code = {
-    enable = mkEnableOption (lib.mdDoc "Enable claude-code");
-
-    package = mkOption {
-      type = types.package;
-      default = pkgs.claude-code;
-      description = lib.mdDoc "The claude-code package to use";
-    };
-
-    extraTools = mkOption {
-      type = types.attrsOf (
-        types.submodule {
-          options = {
-            package = mkOption {
-              type = types.package;
-              description = lib.mdDoc "The package containing the tool";
-            };
-
-            binary = mkOption {
-              type = types.str;
-              description = lib.mdDoc "The name of the binary within the package";
-            };
-          };
-        }
-      );
-      default = { };
-      description = lib.mdDoc "Additional tools to make available for MCP servers";
-      example = lib.literalExpression ''
-        {
-          my-custom-mcp = {
-            package = pkgs.my-custom-mcp;
-            binary = "mcp-binary-name";
-          };
-        }
-      '';
-    };
-
-    mcp = mkOption {
-      type = types.submodule {
-        imports = [
+  options.programs.claude-code.mcps = mkOption {
+    type = types.submodule {
+      imports = [
+        (
           (
-            (
-              { config, ... }:
-              {
-                options = presetOptionTypes // {
-                  servers = mkOption {
-                    type = types.attrsOf (types.submodule mcpServerOptionsType);
-                    default = { };
-                    description = lib.mdDoc "Custom MCP server configurations";
-                  };
+            { config, ... }:
+            {
+              options = presetOptionTypes // {
+                servers = mkOption {
+                  type = types.attrsOf (types.submodule mcpServerOptionsType);
+                  default = { };
+                  description = lib.mdDoc "Custom MCP server configurations";
                 };
-              }
-            )
+              };
+            }
           )
-        ];
-      };
-      default = { };
-      description = lib.mdDoc "MCP server configurations";
+        )
+      ];
     };
+    default = { };
+    description = lib.mdDoc "MCP server configurations";
   };
 
-  config = mkIf cfg.enable {
-    home.packages = [ cfg.package ];
+  config = mkIf claudeCfg.enable {
 
     home.activation.mcpSync = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       $DRY_RUN_CMD ${mcpSyncScript}/bin/mcp-sync

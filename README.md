@@ -1,17 +1,35 @@
-# Claude Code MCP Integration for Nix
+# mcps.nix
 
-A Nix-based integration system for [Claude Code](https://claude.ai/code) that provides
-seamless configuration and management of MCP (Model Context Protocol) servers through
+A curated library of MCP (Model Context Protocol) server presets for [Claude
+Code](https://claude.ai/code) that integrates with native Claude modules in
 [devenv](https://github.com/cachix/devenv) and [Home
 Manager](https://github.com/nix-community/home-manager).
 
+## Overview
+
+Both devenv and home-manager now have native support for Claude Code configuration:
+
+- **home-manager**: `programs.claude-code`
+- **devenv**: `claude.code`
+
+This project provides reusable MCP server configurations (presets) that work with these
+native modules, allowing you to easily enable and configure popular MCP servers without
+manual JSON configuration.
+
 ## Features
 
-- **Pre-configured MCP Servers**: Built-in support for popular MCP servers including Asana, GitHub, Grafana, Git, Filesystem, and more
-- **Secure Credential Management**: Automatic handling of API tokens and credentials from files
-- **devenv Integration**: Easy setup for development environments
-- **Home Manager Support**: System-wide Claude Code configuration
-- **Extensible**: Add custom MCP servers and tools
+- **Pre-configured MCP Servers**: Built-in presets for popular MCP servers including Asana,
+  GitHub, Buildkite, Git, Filesystem, LSP integrations, and more
+
+- **Secure Credential Management**: Support for reading API tokens from files instead of
+  environment variables
+
+- **Native Integration**: Works with upstream Claude modules in both devenv and home-manager
+
+- **Two Home Manager Options**: Choose between native integration or custom script-based
+  installation
+
+- **Extensible**: Add custom MCP servers alongside presets
 
 ## Quick Start
 
@@ -20,7 +38,7 @@ Add this flake's overlay to your nixpkgs import.
 ```nix
 let
   pkgs = import nixpkgs {
-    overlays = [ claude-code.overlays.default ];
+    overlays = [ inputs.mcps.overlays.default ];
   };
 in
 # ...
@@ -28,15 +46,15 @@ in
 
 ### Using with devenv
 
-Add to your devenv module configuration (assuming nix flakes)
+Add to your devenv module configuration:
 
 ```nix
 {
-  imports = [ inputs.claude-code.devenvModules.claude-code ];
-  
-  claude-code = {
+  imports = [ inputs.mcps.devenvModules.claude ];
+
+  claude.code = {
     enable = true;
-    mcp = {
+    mcps = {
       git.enable = true;
       filesystem = {
         enable = true;
@@ -53,15 +71,19 @@ Add to your devenv module configuration (assuming nix flakes)
 
 ### Using with Home Manager
 
-Add to your Home Manager configuration:
+This project provides two Home Manager modules:
+
+#### Option 1: Native Integration (Recommended)
+
+Integrates with home-manager's native Claude Code support. MCP servers are managed through Nix and stored in the Nix store:
 
 ```nix
 {
-  imports = [ inputs.claude-code.homeManagerModules.claude-code ];
-  
+  imports = [ inputs.mcps.homeManagerModules.claude ];
+
   programs.claude-code = {
     enable = true;
-    mcp = {
+    mcps = {
       git.enable = true;
       filesystem = {
         enable = true;
@@ -70,6 +92,30 @@ Add to your Home Manager configuration:
       asana = {
         enable = true;
         tokenFilepath = "/var/run/agenix/asana.token";
+      };
+    };
+  };
+}
+```
+
+#### Option 2: Script-based Installation
+
+Uses the Claude CLI to manage MCP servers in `~/.claude.json`. This approach is useful if you:
+- Want your MCP server configurations to persist in `~/.claude.json`
+- Need to manually manage or edit MCP servers outside of Nix
+- Prefer keeping custom MCP configurations in your home directory
+
+```nix
+{
+  imports = [ inputs.mcps.homeManagerModules.claude-install ];
+
+  programs.claude-code = {
+    enable = true;
+    mcps = {
+      git.enable = true;
+      buildkite = {
+        enable = true;
+        apiKeyFilepath = "/path/to/buildkite-token";
       };
     };
   };
@@ -97,35 +143,15 @@ Add to your Home Manager configuration:
 | **sequential-thinking** | Enhanced reasoning and knowledge graph capabilities | [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) |
 | **time** | Time and timezone utilities with configurable local timezone | [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) |
 
-## Custom MCP Servers
+## Module Structure
 
-Add custom MCP servers using the `servers` attribute:
+The project now provides focused modules that integrate with native Claude Code support:
 
-```nix
-mcp.servers.my-custom-server = {
-  type = "stdio";
-  command = "${pkgs.my-mcp-server}/bin/server";
-  args = [ "--option" "value" ];
-  env = {
-    API_KEY_FILE = "/path/to/api-key";
-  };
-};
-```
+- **`devenvModules.claude`**: Adds `claude.code.mcps` configuration to devenv's native `claude.code` module
+- **`homeManagerModules.claude`**: Adds `programs.claude-code.mcps` configuration to home-manager's native Claude module
+- **`homeManagerModules.claude-install`**: Alternative home-manager module that uses Claude CLI to manage `~/.claude.json`
 
-## Extending with Custom Tools
-
-Add custom tools that can be used by MCP servers:
-
-```nix
-programs.claude-code = {
-  extraTools = {
-    my-tool = {
-      package = pkgs.my-custom-package;
-      binary = "my-binary";
-    };
-  };
-};
-```
+All modules provide access to the same preset MCP server configurations, allowing you to easily enable popular MCP servers with simple boolean flags.
 
 ## Security Features
 
