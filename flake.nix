@@ -17,6 +17,9 @@
     # Used to run integration tests with nixosTest
     # mk-shell-bin.url = "github:rrbutani/nix-mk-shell-bin";
 
+    mcp-nixos.url = "github:utensils/mcp-nixos/v1.0.3";
+    mcp-nixos.inputs.nixpkgs.follows = "nixpkgs";
+
     devenv.url = "github:cachix/devenv";
     devenv.inputs.nixpkgs.follows = "nixpkgs";
 

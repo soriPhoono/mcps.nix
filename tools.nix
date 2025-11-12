@@ -135,6 +135,11 @@ let
       binary = "ast-grep-server";
     };
 
+    nixos = mkTool {
+      package = inputs.mcp-nixos.packages.${pkgs.system}.default;
+      binary = "mcp-nixos";
+    };
+
   };
 
   # Combined tools (base + extra)

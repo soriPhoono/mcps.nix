@@ -535,6 +535,14 @@ let
       };
     };
 
+    nixos = {
+      name = "NixOS";
+      command = tools.getToolPath "nixos";
+      args = _config: [ ];
+      env = _config: { };
+      options = { };
+    };
+
   };
 
 in
