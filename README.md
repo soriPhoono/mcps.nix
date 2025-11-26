@@ -129,6 +129,7 @@ Uses the Claude CLI to manage MCP servers in `~/.claude.json`. This approach is 
 | Preset | Description | Source |
 |--------|-------------|--------|
 | **asana** | Asana task management integration with API token support | [roychri/mcp-server-asana](https://github.com/roychri/mcp-server-asana) |
+| **ast-grep** | Structural code search and transformation using ast-grep patterns | [ast-grep/ast-grep-mcp](https://github.com/ast-grep/ast-grep-mcp) |
 | **buildkite** | Buildkite CI/CD pipeline integration and monitoring | [buildkite/buildkite-mcp-server](https://github.com/buildkite/buildkite-mcp-server) |
 | **fetch** | Web content fetching with proxy support and custom user agents | [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) |
 | **filesystem** | Local filesystem access with configurable path restrictions | [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) |
@@ -140,6 +141,7 @@ Uses the Claude CLI to manage MCP servers in `~/.claude.json`. This approach is 
 | **lsp-python** | Language Server Protocol integration for Python development with configurable workspace | [isaacphi/mcp-language-server](https://github.com/isaacphi/mcp-language-server) |
 | **lsp-rust** | Language Server Protocol integration for Rust development with configurable workspace | [isaacphi/mcp-language-server](https://github.com/isaacphi/mcp-language-server) |
 | **lsp-typescript** | Language Server Protocol integration for TypeScript development with configurable workspace | [isaacphi/mcp-language-server](https://github.com/isaacphi/mcp-language-server) |
+| **obsidian** | Obsidian vault integration for notes and knowledge management | [MarkusPfundstein/mcp-obsidian](https://github.com/MarkusPfundstein/mcp-obsidian) |
 | **sequential-thinking** | Enhanced reasoning and knowledge graph capabilities | [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) |
 | **time** | Time and timezone utilities with configurable local timezone | [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) |
 

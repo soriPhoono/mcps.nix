@@ -515,6 +515,26 @@ let
       };
     };
 
+    ast-grep = {
+      name = "ast-grep";
+      description = "MCP server for ast-grep structural code search and transformation";
+      command = tools.getToolPath "ast-grep";
+      args =
+        config:
+        lib.optionals (config.configFile != null) [
+          "--config"
+          config.configFile
+        ];
+      options = {
+        configFile = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          description = lib.mdDoc "Path to sgconfig.yaml file for customizing ast-grep behavior";
+          example = "/path/to/sgconfig.yaml";
+        };
+      };
+    };
+
   };
 
 in

@@ -130,6 +130,11 @@ let
       binary = "mcp-obsidian";
     };
 
+    ast-grep = mkTool {
+      package = pkgs.ast-grep-mcp;
+      binary = "ast-grep-server";
+    };
+
   };
 
   # Combined tools (base + extra)
