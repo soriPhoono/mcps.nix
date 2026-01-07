@@ -56,40 +56,44 @@ let
   # ----------------------
   # MCP Sync Script Generation
   # ----------------------
+  # Generate the desired MCP servers JSON at build time
+  allServerConfigsJson = builtins.toJSON allServerConfigs;
+
   mcpSyncScript = pkgs.writeShellScriptBin "mcp-sync" ''
     set -euo pipefail
 
     CLAUDE_CONFIG="$HOME/.claude.json"
-
-    # Function to get list of configured servers from ~/.claude.json
-    get_server_list() {
-      if [[ -f "$CLAUDE_CONFIG" ]]; then
-        ${pkgs.jq}/bin/jq -r '.mcpServers // {} | keys[]' "$CLAUDE_CONFIG" 2>/dev/null || true
-      fi
-    }
+    JQ="${pkgs.jq}/bin/jq"
 
     echo "Synchronizing MCP servers configuration..."
 
-    # Remove all existing MCP servers
-    existing_servers=$(get_server_list)
-    if [[ -n "$existing_servers" ]]; then
-      echo "Removing existing MCP servers..."
-      for server in $existing_servers; do
-        ${cfg.package}/bin/claude mcp remove --scope user "$server" > /dev/null 2>&1 || true
-      done
+    # Ensure config file exists with valid JSON
+    if [[ ! -f "$CLAUDE_CONFIG" ]]; then
+      echo "{}" > "$CLAUDE_CONFIG"
     fi
 
-    echo "Installing configured MCP servers..."
+    # Validate existing config is valid JSON, reset if not
+    if ! $JQ empty "$CLAUDE_CONFIG" 2>/dev/null; then
+      echo "Warning: Invalid JSON in $CLAUDE_CONFIG, resetting..."
+      echo "{}" > "$CLAUDE_CONFIG"
+    fi
 
-    # Install new MCP server configurations
-    ${lib.concatStrings (
-      lib.mapAttrsToList (name: value: ''
-        printf " - Installing ${name} "
-        if ${cfg.package}/bin/claude mcp add-json --scope user "${name}" '${builtins.toJSON value}' > /dev/null 2>&1; then
-          printf "✅\n"
-        fi
-      '') allServerConfigs
-    )}
+    # Read the desired MCP servers configuration (generated at build time)
+    DESIRED_SERVERS='${allServerConfigsJson}'
+
+    # Update the config file: replace mcpServers entirely with desired config
+    UPDATED_CONFIG=$($JQ --argjson servers "$DESIRED_SERVERS" '.mcpServers = $servers' "$CLAUDE_CONFIG")
+
+    # Write back atomically
+    echo "$UPDATED_CONFIG" > "$CLAUDE_CONFIG.tmp"
+    mv "$CLAUDE_CONFIG.tmp" "$CLAUDE_CONFIG"
+
+    # List installed servers
+    echo "Installed MCP servers:"
+    echo "$DESIRED_SERVERS" | $JQ -r 'keys[]' | while read -r server; do
+      echo " - $server"
+    done
+
     echo "MCP servers synchronization completed!"
   '';
 
