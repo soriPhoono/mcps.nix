@@ -59,25 +59,25 @@ let
   mcpSyncScript = pkgs.writeShellScriptBin "mcp-sync" ''
     set -euo pipefail
 
-    # Function to check if we have any MCP servers configured
-    has_mcp_servers() {
-      ! ${cfg.package}/bin/claude mcp list 2>&1 | grep -q "No MCP servers configured"
-    }
+    CLAUDE_CONFIG="$HOME/.claude.json"
 
-    # Function to get list of configured servers
+    # Function to get list of configured servers from ~/.claude.json
     get_server_list() {
-      ${cfg.package}/bin/claude mcp list | grep ': ' | cut -d':' -f1
+      if [[ -f "$CLAUDE_CONFIG" ]]; then
+        ${pkgs.jq}/bin/jq -r '.mcpServers // {} | keys[]' "$CLAUDE_CONFIG" 2>/dev/null || true
+      fi
     }
 
     echo "Synchronizing MCP servers configuration..."
 
     # Remove all existing MCP servers
-    while has_mcp_servers; do
+    existing_servers=$(get_server_list)
+    if [[ -n "$existing_servers" ]]; then
       echo "Removing existing MCP servers..."
-      for server in $(get_server_list); do
-        ${cfg.package}/bin/claude mcp remove --scope user "$server" > /dev/null
+      for server in $existing_servers; do
+        ${cfg.package}/bin/claude mcp remove --scope user "$server" > /dev/null 2>&1 || true
       done
-    done
+    fi
 
     echo "Installing configured MCP servers..."
 
