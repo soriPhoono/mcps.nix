@@ -12,7 +12,7 @@ let
     types
     ;
 
-  geminiCfg = config.programs.gemini-cli;
+  geminiCfg = config.programs.gemini;
 
   # ----------------------
   # Tools Management
@@ -104,11 +104,11 @@ let
 
 in
 {
-  options.programs.gemini-cli = {
+  options.programs.gemini = {
     enable = mkOption {
       type = types.bool;
       default = false;
-      description = lib.mdDoc "Enable gemini-cli integration";
+      description = lib.mdDoc "Enable gemini integration";
     };
 
     package = mkOption {
@@ -146,6 +146,13 @@ in
       default = { };
       description = lib.mdDoc "MCP server configurations";
     };
+
+    mcpServers = mkOption {
+      type = types.attrsOf (types.submodule mcpServerOptionsType);
+      internal = true;
+      default = { };
+      description = lib.mdDoc "Computed MCP servers configuration (internal)";
+    };
   };
 
   config = mkIf geminiCfg.enable {
@@ -154,6 +161,8 @@ in
     home.activation.geminiMcpSync = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       $DRY_RUN_CMD ${mcpSyncScript}/bin/gemini-mcp-sync
     '';
+
+    programs.gemini.mcpServers = allServerConfigs;
 
     assertions = lib.flatten (
       lib.mapAttrsToList (name: serverCfg: [

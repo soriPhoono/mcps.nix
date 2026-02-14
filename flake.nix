@@ -15,7 +15,7 @@
     home-manager-unstable.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
     # Used to run integration tests with nixosTest
-    # mk-shell-bin.url = "github:rrbutani/nix-mk-shell-bin";
+    mk-shell-bin.url = "github:rrbutani/nix-mk-shell-bin";
 
     mcp-nixos.url = "github:utensils/mcp-nixos/v1.0.3";
     mcp-nixos.inputs.nixpkgs.follows = "nixpkgs";
@@ -105,19 +105,33 @@
               inherit inputs pkgs system;
             };
 
+            "home-manager/gemini" = import ./tests/home-manager-gemini-tests.nix {
+              inherit inputs pkgs system;
+            };
+
             "devenv/claude" = import ./tests/devenv-claude-tests.nix {
+              inherit inputs pkgs system;
+            };
+
+            "devenv/gemini" = import ./tests/devenv-gemini-tests.nix {
               inherit inputs pkgs system;
             };
           };
 
           devenv.shells.default =
-            { pkgs, config, ... }:
+            { pkgs, config, lib, ... }:
             {
               imports = [ inputs.self.devenvModules.claude ];
 
               git-hooks.hooks = {
                 nixfmt-rfc-style.enable = true;
               };
+
+              devenv.root =
+                let
+                  ignored = pkgs.writeText "ignore" "";
+                in
+                lib.mkDefault (builtins.toString ./.);
 
               claude.code = {
                 enable = true;

@@ -58,6 +58,13 @@ in
       description = lib.mdDoc "Extra tools to make available to the MCP presets";
     };
 
+    mcpServers = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.submodule mcpServerOptionsType);
+      internal = true;
+      default = { };
+      description = lib.mdDoc "Computed MCP servers configuration (internal)";
+    };
+
     mcps = lib.mkOption {
       type = lib.types.submodule {
         imports = [
@@ -83,6 +90,8 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    gemini.cli.mcpServers = allServerConfigs;
+
     packages = [ pkgs.gemini-cli ];
 
     enterShell = ''
