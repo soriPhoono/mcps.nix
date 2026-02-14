@@ -69,22 +69,22 @@
           allowUnfree = true;
         };
         installOverlays = [
-          inputs.self.overlays.default
+          inputs.self.overlays.development
         ];
         generateAllPackage = true;
       };
 
       flake.overlays = {
-        default =
+        development =
           _final: prev:
-          let
-            unstable-pkgs = import inputs.nixpkgs-unstable { inherit (prev) system; };
-            self-pkgs = inputs.self.packages.${prev.system};
-          in
           {
             inherit (inputs) uv2nix pyproject pyproject-build-systems;
-            inherit (unstable-pkgs) github-mcp-server;
-            inherit (self-pkgs)
+          };
+        default =
+          _final: prev:
+          {
+            inherit (inputs.nixpkgs-unstable.legacyPackages.${prev.system}) github-mcp-server;
+            inherit (inputs.self.packages.${prev.system})
               mcp-servers
               mcp-server-asana
               mcp-language-server
