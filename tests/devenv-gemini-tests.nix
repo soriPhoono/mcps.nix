@@ -24,6 +24,11 @@ let
             enable = true;
             inherit apiKeyFilepath;
           };
+          mcps.git.enable = true;
+          mcps.filesystem = {
+            enable = true;
+            allowedPaths = [ "/tmp" ];
+          };
         };
       }
     ];
@@ -35,9 +40,31 @@ in
       name = "command";
       type = "script";
       script = ''
-        CMD_EXPECTED="${config.gemini.cli.mcpServers.buildkite.command}"
-        if [[ -z "$CMD_EXPECTED" ]]; then
-           echo "gemini-cli does not have mcp server configured"
+        # Check buildkite
+        CMD_BUILDKITE="${config.gemini.cli.mcpServers.buildkite.command}"
+        if [[ -z "$CMD_BUILDKITE" ]]; then
+           echo "gemini-cli buildkite mcp server not configured"
+           exit 1
+        fi 
+
+        # Check git
+        CMD_GIT="${config.gemini.cli.mcpServers.git.command}"
+        if [[ -z "$CMD_GIT" ]]; then
+           echo "gemini-cli git mcp server not configured"
+           exit 1
+        fi
+
+        # Check filesystem
+        CMD_FS="${config.gemini.cli.mcpServers.filesystem.command}"
+        if [[ -z "$CMD_FS" ]]; then
+           echo "gemini-cli filesystem mcp server not configured"
+           exit 1
+        fi
+
+        # Check filesystem args
+        FS_ARGS="${builtins.elemAt config.gemini.cli.mcpServers.filesystem.args 0}"
+        if [[ "$FS_ARGS" != "/tmp" ]]; then
+           echo "gemini-cli filesystem mcp server args incorrect: $FS_ARGS"
            exit 1
         fi 
       '';

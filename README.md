@@ -9,7 +9,7 @@ Manager](https://github.com/nix-community/home-manager).
 
 Both devenv and home-manager now have native support for Claude Code configuration:
 
-- **home-manager**: `programs.claude-code`, `programs.gemini`
+- **home-manager**: `programs.claude-code`, `programs.gemini-cli`
 - **devenv**: `claude.code`, `gemini.cli`
 
 This project provides reusable MCP server configurations (presets) that work with these
@@ -134,7 +134,7 @@ Uses the Claude CLI to manage MCP servers in `~/.claude.json`. This approach is 
   };
 
   # Gemini CLI configuration
-  programs.gemini = {
+  programs.gemini-cli = {
     enable = true;
     mcps = {
       git.enable = true;

@@ -111,6 +111,8 @@ in
       mcpServers = allServerConfigs;
     };
 
+    home.file.".gemini/settings.json".text = builtins.toJSON cfg.settings;
+
     assertions = lib.flatten (
       lib.mapAttrsToList (name: serverCfg: [
         {

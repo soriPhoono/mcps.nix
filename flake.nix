@@ -96,6 +96,8 @@
         }:
         {
 
+          formatter = pkgs.nixfmt-rfc-style;
+
           nixtest.suites = {
             "home-manager/claude" = import ./tests/home-manager-claude-tests.nix {
               inherit inputs pkgs system;
