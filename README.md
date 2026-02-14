@@ -9,8 +9,8 @@ Manager](https://github.com/nix-community/home-manager).
 
 Both devenv and home-manager now have native support for Claude Code configuration:
 
-- **home-manager**: `programs.claude-code`
-- **devenv**: `claude.code`
+- **home-manager**: `programs.claude-code`, `programs.gemini`
+- **devenv**: `claude.code`, `gemini.cli`
 
 This project provides reusable MCP server configurations (presets) that work with these
 native modules, allowing you to easily enable and configure popular MCP servers without
@@ -65,6 +65,20 @@ Add to your devenv module configuration:
         tokenFilepath = "/path/to/github-token";
       };
     };
+    };
+  };
+
+  # Gemini CLI configuration
+  gemini.cli = {
+    enable = true;
+    mcps = {
+      git.enable = true;
+      filesystem = {
+        enable = true;
+        allowedPaths = [ "/path/to/your/project" ];
+      };
+      # ... other presets
+    };
   };
 }
 ```
@@ -118,6 +132,20 @@ Uses the Claude CLI to manage MCP servers in `~/.claude.json`. This approach is 
         apiKeyFilepath = "/path/to/buildkite-token";
       };
     };
+    };
+  };
+
+  # Gemini CLI configuration
+  programs.gemini = {
+    enable = true;
+    mcps = {
+      git.enable = true;
+      filesystem = {
+        enable = true;
+        allowedPaths = [ "${config.home.homeDirectory}/Projects" ];
+      };
+      # ... other presets
+    };
   };
 }
 ```
@@ -151,8 +179,10 @@ Uses the Claude CLI to manage MCP servers in `~/.claude.json`. This approach is 
 The project now provides focused modules that integrate with native Claude Code support:
 
 - **`devenvModules.claude`**: Adds `claude.code.mcps` configuration to devenv's native `claude.code` module
+- **`devenvModules.gemini-cli`**: Adds `gemini.cli.mcps` configuration to devenv
 - **`homeManagerModules.claude`**: Adds `programs.claude-code.mcps` configuration to home-manager's native Claude module
 - **`homeManagerModules.claude-install`**: Alternative home-manager module that uses Claude CLI to manage `~/.claude.json`
+- **`homeManagerModules.gemini-cli`**: Adds `programs.gemini.mcps` configuration to home-manager
 
 All modules provide access to the same preset MCP server configurations, allowing you to easily enable popular MCP servers with simple boolean flags.
 
