@@ -44,6 +44,8 @@ in
 # ...
 ```
 
+## Claude Code Integration
+
 ### Using with devenv
 
 Add to your devenv module configuration:
@@ -66,25 +68,12 @@ Add to your devenv module configuration:
       };
     };
   };
-
-  # Gemini CLI configuration
-  gemini.cli = {
-    enable = true;
-    mcps = {
-      git.enable = true;
-      filesystem = {
-        enable = true;
-        allowedPaths = [ "/path/to/your/project" ];
-      };
-      # ... other presets
-    };
-  };
 }
 ```
 
 ### Using with Home Manager
 
-This project provides two Home Manager modules:
+This project provides two Home Manager modules for Claude Code:
 
 #### Option 1: Native Integration (Recommended)
 
@@ -132,8 +121,41 @@ Uses the Claude CLI to manage MCP servers in `~/.claude.json`. This approach is 
       };
     };
   };
+}
+```
 
-  # Gemini CLI configuration
+## Gemini CLI Integration
+
+### Using with devenv
+
+Add to your devenv module configuration:
+
+```nix
+{
+  imports = [ inputs.mcps.devenvModules.gemini-cli ];
+
+  gemini.cli = {
+    enable = true;
+    mcps = {
+      git.enable = true;
+      filesystem = {
+        enable = true;
+        allowedPaths = [ "/path/to/your/project" ];
+      };
+      # ... other presets
+    };
+  };
+}
+```
+
+### Using with Home Manager
+
+Add `programs.gemini-cli` configuration to home-manager:
+
+```nix
+{
+  imports = [ inputs.mcps.homeManagerModules.gemini-cli ];
+
   programs.gemini-cli = {
     enable = true;
     mcps = {

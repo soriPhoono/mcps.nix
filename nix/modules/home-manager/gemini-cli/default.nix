@@ -21,7 +21,6 @@ let
     inherit pkgs lib;
     inputs = { };
   };
-  extendedTools = baseTools.extend (cfg.extraTools or { });
 
   # ----------------------
   # Preset Management
@@ -29,7 +28,7 @@ let
   mcpServerOptionsType = import ../../../lib/mcp-server-options.nix lib;
   presetDefinitions = import ../../../../presets.nix {
     inherit config lib pkgs;
-    tools = extendedTools;
+    tools = baseTools;
   };
 
   presetOptionTypes = lib.mapAttrs (
@@ -54,27 +53,7 @@ let
 
 in
 {
-  options.programs.gemini-cli = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-      description = lib.mdDoc "Enable gemini integration";
-    };
-
-    package = mkOption {
-      type = types.package;
-      default = pkgs.gemini-cli;
-      defaultText = lib.literalExpression "pkgs.gemini-cli";
-      description = lib.mdDoc "The gemini-cli package to install.";
-    };
-
-    extraTools = mkOption {
-      type = types.attrs;
-      default = { };
-      description = lib.mdDoc "Extra tools to make available to the MCP presets";
-    };
-
-    mcps = mkOption {
+  options.programs.gemini-cli.mcps = mkOption {
       type = types.submodule {
         imports = [
           (
@@ -97,22 +76,12 @@ in
       description = lib.mdDoc "MCP server configurations";
     };
 
-    settings = mkOption {
-      type = types.attrs;
-      default = { };
-      description = lib.mdDoc "Configuration for gemini-cli (written to settings.json)";
-    };
-  };
 
   config = mkIf cfg.enable {
-    home.packages = [ cfg.package ];
-
     programs.gemini-cli.settings = {
       mcpServers = allServerConfigs;
     };
-
-    home.file.".gemini/settings.json".text = builtins.toJSON cfg.settings;
-
+    
     assertions = lib.flatten (
       lib.mapAttrsToList (name: serverCfg: [
         {
