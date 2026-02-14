@@ -65,7 +65,6 @@ Add to your devenv module configuration:
         tokenFilepath = "/path/to/github-token";
       };
     };
-    };
   };
 
   # Gemini CLI configuration
@@ -131,7 +130,6 @@ Uses the Claude CLI to manage MCP servers in `~/.claude.json`. This approach is 
         enable = true;
         apiKeyFilepath = "/path/to/buildkite-token";
       };
-    };
     };
   };
 
