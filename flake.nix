@@ -79,10 +79,20 @@
           _final: prev:
           let
             unstable-pkgs = import inputs.nixpkgs-unstable { inherit (prev) system; };
+            self-pkgs = inputs.self.packages.${prev.system};
           in
           {
             inherit (inputs) uv2nix pyproject pyproject-build-systems;
             inherit (unstable-pkgs) github-mcp-server;
+            inherit (self-pkgs)
+              mcp-servers
+              mcp-server-asana
+              mcp-language-server
+              mcp-grafana
+              mcp-obsidian
+              buildkite-mcp-server
+              ast-grep-mcp
+              ;
           };
       };
 
