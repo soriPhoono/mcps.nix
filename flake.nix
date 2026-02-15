@@ -51,9 +51,8 @@
     systems.flake = false;
   };
 
-  outputs =
-    inputs:
-    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+  outputs = inputs:
+    inputs.flake-parts.lib.mkFlake {inherit inputs;} {
       systems = import inputs.systems;
 
       imports = [
@@ -70,90 +69,92 @@
         };
         installOverlays = [
           inputs.self.overlays.development
+          inputs.self.overlays.default
         ];
         generateAllPackage = true;
       };
 
       flake.overlays = {
-        development =
-          _final: prev:
-          {
-            inherit (inputs) uv2nix pyproject pyproject-build-systems;
-          };
-        default =
-          _final: prev:
-          {
-            inherit (inputs.nixpkgs-unstable.legacyPackages.${prev.system}) github-mcp-server;
-            inherit (inputs.self.packages.${prev.system})
-              mcp-servers
-              mcp-server-asana
-              mcp-language-server
-              mcp-grafana
-              mcp-obsidian
-              buildkite-mcp-server
-              ast-grep-mcp
-              ;
-          };
+        development = _final: prev: {
+          inherit (inputs) uv2nix pyproject pyproject-build-systems;
+        };
+        default = _final: prev: {
+          inherit (inputs.nixpkgs-unstable.legacyPackages.${prev.system}) github-mcp-server;
+          inherit
+            (inputs.self.packages.${prev.system})
+            mcp-servers
+            mcp-server-asana
+            mcp-language-server
+            mcp-grafana
+            mcp-obsidian
+            buildkite-mcp-server
+            ast-grep-mcp
+            ;
+        };
       };
 
-      perSystem =
-        {
-          self',
-          pkgs,
-          system,
-          config,
-          ...
-        }:
-        {
+      perSystem = {
+        self',
+        pkgs,
+        system,
+        config,
+        ...
+      }: {
+        formatter = pkgs.nixfmt-rfc-style;
 
-          formatter = pkgs.nixfmt-rfc-style;
 
-          nixtest.suites = {
-            "home-manager/claude" = import ./tests/home-manager-claude-tests.nix {
-              inherit inputs pkgs system;
-            };
 
-            "home-manager/claude-install" = import ./tests/home-manager-claude-install-tests.nix {
-              inherit inputs pkgs system;
-            };
-
-            "home-manager/gemini" = import ./tests/home-manager-gemini-tests.nix {
-              inherit inputs pkgs system;
-            };
-
-            "devenv/claude" = import ./tests/devenv-claude-tests.nix {
-              inherit inputs pkgs system;
-            };
-
-            "devenv/gemini" = import ./tests/devenv-gemini-tests.nix {
-              inherit inputs pkgs system;
-            };
+        nixtest.suites = {
+          "home-manager/claude" = import ./tests/home-manager-claude-tests.nix {
+            inherit inputs pkgs system;
           };
 
-          devenv.shells.default =
-            { pkgs, config, lib, ... }:
-            {
-              imports = [ inputs.self.devenvModules.claude ];
+          "home-manager/claude-install" = import ./tests/home-manager-claude-install-tests.nix {
+            inherit inputs pkgs system;
+          };
 
-              git-hooks.hooks = {
-                nixfmt-rfc-style.enable = true;
-              };
+          "home-manager/gemini" = import ./tests/home-manager-gemini-tests.nix {
+            inherit inputs pkgs system;
+          };
 
-              devenv.root =
-                let
-                  ignored = pkgs.writeText "ignore" "";
-                in
-                lib.mkDefault (builtins.toString ./.);
+          "home-manager/gemini-install" = import ./tests/home-manager-gemini-install-tests.nix {
+            inherit inputs pkgs system;
+          };
 
-              claude.code = {
-                enable = true;
-                mcps.lsp-nix = {
-                  enable = true;
-                  workspace = config.devenv.root;
-                };
-              };
+          "devenv/claude" = import ./tests/devenv-claude-tests.nix {
+            inherit inputs pkgs system;
+          };
 
-            };
+          "devenv/gemini" = import ./tests/devenv-gemini-tests.nix {
+            inherit inputs pkgs system;
+          };
         };
+
+        devenv.shells.default = {
+          pkgs,
+          config,
+          lib,
+          ...
+        }: {
+          imports = [inputs.self.devenvModules.claude];
+
+          git-hooks.hooks = {
+            nixfmt-rfc-style.enable = true;
+          };
+
+          devenv.root = let
+            ignored = pkgs.writeText "ignore" "";
+          in
+            lib.mkDefault (builtins.toString ./.);
+
+          claude.code = {
+            enable = true;
+            mcps.lsp-nix = {
+              enable = true;
+              workspace = config.devenv.root;
+            };
+          };
+        };
+      };
     };
 }
