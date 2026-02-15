@@ -70,7 +70,7 @@
     set -euo pipefail
 
     ANTIGRAVITY_CONFIG_DIR="$HOME/.gemini/antigravity"
-    ANTIGRAVITY_CONFIG="$ANTIGRAVITY_CONFIG_DIR/mcp_servers.json"
+    ANTIGRAVITY_CONFIG="$ANTIGRAVITY_CONFIG_DIR/mcp_config.json"
     JQ="${pkgs.jq}/bin/jq"
 
     echo "Synchronizing Antigravity MCP servers configuration..."

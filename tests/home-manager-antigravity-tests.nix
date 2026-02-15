@@ -66,7 +66,14 @@ in {
            exit 1
         fi
 
-        echo "Activation script correctly contains antigravity-mcp-sync and uses external JSON file"
+        if ! grep -q "mcp_config.json" "$SYNC_SCRIPT_PATH"; then
+           echo "Sync script does not reference the correct config file (mcp_config.json)"
+           echo "Content of $SYNC_SCRIPT_PATH:"
+           cat "$SYNC_SCRIPT_PATH"
+           exit 1
+        fi
+
+        echo "Activation script correctly contains antigravity-mcp-sync, uses external JSON file and correct config path"
       '';
     }
     {
