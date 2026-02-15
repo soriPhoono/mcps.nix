@@ -16,19 +16,23 @@
     modules = [
       inputs.self.homeManagerModules.gemini-cli
       {
-        home.stateVersion = "25.11";
-        home.username = "jdoe";
-        home.homeDirectory = "/test";
+        home = {
+          stateVersion = "25.11";
+          username = "jdoe";
+          homeDirectory = "/test";
+        };
         programs.gemini-cli = {
           enable = true;
-          mcps.buildkite = {
-            enable = true;
-            inherit apiKeyFilepath;
-          };
-          mcps.git.enable = true;
-          mcps.filesystem = {
-            enable = true;
-            allowedPaths = ["/tmp"];
+          mcps = {
+            buildkite = {
+              enable = true;
+              inherit apiKeyFilepath;
+            };
+            git.enable = true;
+            filesystem = {
+              enable = true;
+              allowedPaths = ["/tmp"];
+            };
           };
         };
       }

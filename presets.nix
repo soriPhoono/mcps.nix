@@ -397,7 +397,7 @@
         "--workspace"
         config.workspace
         "--lsp"
-        config.lspPackage.meta.mainProgram
+        config.lspBinary
         "--"
         "--stdio"
       ];
@@ -411,6 +411,12 @@
           type = types.package;
           default = pkgs.pyright;
           description = "package for python's LSP server";
+        };
+
+        lspBinary = mkOption {
+          type = types.str;
+          default = "pyright-langserver";
+          description = "Binary name for the LSP server";
         };
 
         workspace = mkOption {

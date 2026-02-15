@@ -25,10 +25,7 @@
         inputs.devenv.flakeModule
       ];
 
-      perSystem = {
-        system,
-        ...
-      }: {
+      perSystem = {system, ...}: {
         _module.args.pkgs = import inputs.nixpkgs {
           inherit system;
           config.allowUnfree = true;
@@ -38,9 +35,7 @@
           ];
         };
 
-        devenv.shells.default = {
-          ...
-        }: {
+        devenv.shells.default = {...}: {
           imports = [
             inputs.claude-code.devenvModules.claude-code
           ];

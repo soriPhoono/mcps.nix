@@ -17,14 +17,16 @@
       {
         gemini.cli = {
           enable = true;
-          mcps.buildkite = {
-            enable = true;
-            inherit apiKeyFilepath;
-          };
-          mcps.git.enable = true;
-          mcps.filesystem = {
-            enable = true;
-            allowedPaths = ["/tmp"];
+          mcps = {
+            buildkite = {
+              enable = true;
+              inherit apiKeyFilepath;
+            };
+            git.enable = true;
+            filesystem = {
+              enable = true;
+              allowedPaths = ["/tmp"];
+            };
           };
         };
       }

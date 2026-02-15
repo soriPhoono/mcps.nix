@@ -2,7 +2,5 @@
   "recommendations": [
     "jnoortheen.nix-ide",
     "mkhl.direnv",
-    "tamasfe.even-better-toml",
-    "redhat.vscode-yaml"
   ]
 }

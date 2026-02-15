@@ -19,9 +19,11 @@
       ../nix/modules/home-manager/gemini-install/default.nix # Importing directly to be safe for now
 
       {
-        home.stateVersion = "25.11";
-        home.username = "jdoe";
-        home.homeDirectory = "/test";
+        home = {
+          stateVersion = "25.11";
+          username = "jdoe";
+          homeDirectory = "/test";
+        };
         programs.gemini-cli = {
           enable = true;
           mcps.buildkite = {
