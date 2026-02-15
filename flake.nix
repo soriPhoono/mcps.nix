@@ -118,15 +118,11 @@
             inherit inputs pkgs system;
           };
 
-          "home-manager/claude-install" = import ./tests/home-manager-claude-install-tests.nix {
-            inherit inputs pkgs system;
-          };
-
           "home-manager/gemini" = import ./tests/home-manager-gemini-tests.nix {
             inherit inputs pkgs system;
           };
 
-          "home-manager/gemini-install" = import ./tests/home-manager-gemini-install-tests.nix {
+          "home-manager/antigravity" = import ./tests/home-manager-antigravity-tests.nix {
             inherit inputs pkgs system;
           };
 

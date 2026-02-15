@@ -12,7 +12,7 @@
     types
     ;
 
-  cfg = config.programs.gemini-cli;
+  cfg = config.programs.antigravity;
 
   # ----------------------
   # Construct inputs for tools.nix.
@@ -65,53 +65,65 @@
   # ----------------------
   allServerConfigsJson = builtins.toJSON allServerConfigs;
 
-  mcpSyncScript = pkgs.writeShellScriptBin "gemini-mcp-sync" ''
+  mcpSyncScript = pkgs.writeShellScriptBin "antigravity-mcp-sync" ''
     set -euo pipefail
 
-    GEMINI_CONFIG_DIR="$HOME/.gemini"
-    GEMINI_CONFIG="$GEMINI_CONFIG_DIR/settings.json"
+    ANTIGRAVITY_CONFIG_DIR="$HOME/.gemini/antigravity"
+    ANTIGRAVITY_CONFIG="$ANTIGRAVITY_CONFIG_DIR/mcp_servers.json"
     JQ="${pkgs.jq}/bin/jq"
 
-    echo "Synchronizing Gemini MCP servers configuration..."
+    echo "Synchronizing Antigravity MCP servers configuration..."
 
     # Ensure config directory exists
-    mkdir -p "$GEMINI_CONFIG_DIR"
+    mkdir -p "$ANTIGRAVITY_CONFIG_DIR"
 
     # Ensure config file exists with valid JSON
-    if [[ ! -f "$GEMINI_CONFIG" ]]; then
-      echo "{}" > "$GEMINI_CONFIG"
+    if [[ ! -f "$ANTIGRAVITY_CONFIG" ]]; then
+      echo "{}" > "$ANTIGRAVITY_CONFIG"
     fi
 
     # Validate existing config is valid JSON, reset if not
-    if ! $JQ empty "$GEMINI_CONFIG" 2>/dev/null; then
-      echo "Warning: Invalid JSON in $GEMINI_CONFIG, resetting..."
-      echo "{}" > "$GEMINI_CONFIG"
+    if ! $JQ empty "$ANTIGRAVITY_CONFIG" 2>/dev/null; then
+       echo "Warning: Invalid JSON in $ANTIGRAVITY_CONFIG, resetting..."
+       echo "{}" > "$ANTIGRAVITY_CONFIG"
     fi
 
     # Read the desired MCP servers configuration (generated at build time)
     DESIRED_SERVERS='${allServerConfigsJson}'
 
     # Update the config file: replace mcpServers entirely with desired config
-    UPDATED_CONFIG=$($JQ --argjson servers "$DESIRED_SERVERS" '.mcpServers = $servers' "$GEMINI_CONFIG")
+    UPDATED_CONFIG=$($JQ --argjson servers "$DESIRED_SERVERS" '.mcpServers = $servers' "$ANTIGRAVITY_CONFIG")
 
     # Write back atomically
-    echo "$UPDATED_CONFIG" > "$GEMINI_CONFIG.tmp"
-    mv "$GEMINI_CONFIG.tmp" "$GEMINI_CONFIG"
+    echo "$UPDATED_CONFIG" > "$ANTIGRAVITY_CONFIG.tmp"
+    mv "$ANTIGRAVITY_CONFIG.tmp" "$ANTIGRAVITY_CONFIG"
 
     # List installed servers
-    echo "Installed Gemini MCP servers:"
+    echo "Installed Antigravity MCP servers:"
     echo "$DESIRED_SERVERS" | $JQ -r 'keys[]' | while read -r server; do
       echo " - $server"
     done
 
-    echo "Gemini MCP servers synchronization completed!"
+    echo "Antigravity MCP servers synchronization completed!"
   '';
 in {
-  options.programs.gemini-cli = {
+  options.programs.antigravity = {
+    enable = mkOption {
+      type = types.bool;
+      default = false;
+      description = lib.mdDoc "Enable antigravity editor agent configuration";
+    };
+
     allowImpermanence = mkOption {
       type = types.bool;
       default = true;
-      description = lib.mdDoc "Whether to manage Gemini settings via an activation script (useful for impermanent systems)";
+      description = lib.mdDoc "Whether to manage Antigravity settings via an activation script (useful for impermanent systems)";
+    };
+
+    package = mkOption {
+      type = types.package;
+      default = pkgs.antigravity;
+      description = lib.mdDoc "The antigravity package to use.";
     };
 
     mcps = mkOption {
@@ -137,23 +149,15 @@ in {
     };
   };
 
-  config = {
-    home.activation.geminiMcpSync = mkIf cfg.allowImpermanence (lib.hm.dag.entryAfter ["writeBoundary"] ''
-      $DRY_RUN_CMD ${mcpSyncScript}/bin/gemini-mcp-sync
-    '');
+  config = mkIf cfg.enable {
+    # Antigravity uses VS Code settings under the hood.
+    programs.vscode = {
+      enable = true;
+      inherit (cfg) package;
+    };
 
-    assertions = lib.flatten (
-      lib.mapAttrsToList (name: serverCfg: [
-        {
-          assertion = (serverCfg.type != "stdio") || (serverCfg.command != "");
-          message = "Command must be specified when type is 'stdio' for MCP server '${name}'";
-        }
-        {
-          assertion = (serverCfg.type != "sse") || (serverCfg.url != "");
-          message = "URL must be specified when type is 'sse' for MCP server '${name}'";
-        }
-      ])
-      allServerConfigs
-    );
+    home.activation.antigravityMcpSync = mkIf cfg.allowImpermanence (lib.hm.dag.entryAfter ["writeBoundary"] ''
+      $DRY_RUN_CMD ${mcpSyncScript}/bin/antigravity-mcp-sync
+    '');
   };
 }
