@@ -370,6 +370,8 @@
         config.workspace
         "--lsp"
         config.lspPackage.meta.mainProgram
+        "--"
+        "--stdio"
       ];
       env = _config: {
         PATH = lib.makeBinPath [pkgs.typescript-language-server];

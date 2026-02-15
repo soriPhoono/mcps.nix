@@ -1,0 +1,33 @@
+{
+    "nix.enableLanguageServer": true,
+    "nix.serverPath": "nil",
+    "nix.serverSettings": {
+        "nil": {
+            "formatting": {
+                "command": [
+                    "alejandra"
+                ]
+            }
+        }
+    },
+    "direnv.restart.automatic": true,
+    "[nix]": {
+        "editor.defaultFormatter": "jnoortheen.nix-ide",
+        "editor.formatOnSave": true
+    },
+    "files.exclude": {
+        "result": true,
+        "result-*": true,
+        ".direnv/": true
+    },
+    "search.exclude": {
+        "result": true,
+        "result-*": true,
+        ".direnv/": true
+    },
+    "files.watcherExclude": {
+        "result": true,
+        "result-*": true,
+        ".direnv/": true
+    }
+}
