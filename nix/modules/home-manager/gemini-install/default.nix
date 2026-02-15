@@ -2,11 +2,11 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
-}:
-
-let
-  inherit (lib)
+}: let
+  inherit
+    (lib)
     mkOption
     mkIf
     types
@@ -15,15 +15,25 @@ let
   geminiCfg = config.programs.gemini-cli;
 
   # ----------------------
-  # Tools Management
-  # ----------------------
+  # Construct inputs for tools.nix.
+  # If we are running from within a flake that uses mcps as an input (like homelab),
+  # mcp-nixos will be in inputs.mcps.inputs.
+  # If we are running from within mcps itself, it will be in inputs.
+  toolsInputs =
+    inputs
+    // (
+      if inputs ? mcps
+      then inputs.mcps.inputs
+      else {}
+    );
+
   baseTools = import ../../../../tools.nix {
     inherit pkgs lib;
-    inputs = { };
+    inputs = toolsInputs;
   };
   # gemini-cli doesn't have extraTools option in standard module yet, but we can support it if we want functionality parity
   # For now, sticking to baseTools as gemini-cli/default.nix does.
-  extendedTools = baseTools; 
+  extendedTools = baseTools;
 
   # ----------------------
   # Preset Management
@@ -34,14 +44,16 @@ let
     tools = extendedTools;
   };
 
-  presetOptionTypes = lib.mapAttrs (
-    name: preset:
-    mkOption {
-      type = lib.types.submodule preset;
-      default = { };
-      description = lib.mdDoc (preset.meta.description or "MCP preset for ${name}");
-    }
-  ) presetDefinitions;
+  presetOptionTypes =
+    lib.mapAttrs (
+      name: preset:
+        mkOption {
+          type = lib.types.submodule preset;
+          default = {};
+          description = lib.mdDoc (preset.meta.description or "MCP preset for ${name}");
+        }
+    )
+    presetDefinitions;
 
   # ----------------------
   # Server Configuration Management
@@ -49,10 +61,9 @@ let
   # We check config.programs.gemini-cli.mcps (defined below)
   cfgMcps = config.programs.gemini-cli.mcps;
 
-  enabledPresetServers =
-    let
-      enabledPresets = lib.filterAttrs (name: preset: name != "servers" && preset.enable) cfgMcps;
-    in
+  enabledPresetServers = let
+    enabledPresets = lib.filterAttrs (name: preset: name != "servers" && preset.enable) cfgMcps;
+  in
     lib.mapAttrs (_: preset: preset.mcpServer) enabledPresets;
 
   allServerConfigs = enabledPresetServers // cfgMcps.servers;
@@ -105,35 +116,31 @@ let
 
     echo "Gemini MCP servers synchronization completed!"
   '';
-
-in
-{
+in {
   options.programs.gemini-cli.mcps = mkOption {
     type = types.submodule {
       imports = [
         (
-          (
-            { config, ... }:
-            {
-              options = presetOptionTypes // {
+          {config, ...}: {
+            options =
+              presetOptionTypes
+              // {
                 servers = mkOption {
                   type = types.attrsOf (types.submodule mcpServerOptionsType);
-                  default = { };
+                  default = {};
                   description = lib.mdDoc "Custom MCP server configurations";
                 };
               };
-            }
-          )
+          }
         )
       ];
     };
-    default = { };
+    default = {};
     description = lib.mdDoc "MCP server configurations for Gemini";
   };
 
   config = mkIf geminiCfg.enable {
-
-    home.activation.geminiMcpSync = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    home.activation.geminiMcpSync = lib.hm.dag.entryAfter ["writeBoundary"] ''
       $DRY_RUN_CMD ${mcpSyncScript}/bin/gemini-mcp-sync
     '';
 
@@ -147,7 +154,8 @@ in
           assertion = (serverCfg.type != "sse") || (serverCfg.url != "");
           message = "URL must be specified when type is 'sse' for MCP server '${name}'";
         }
-      ]) allServerConfigs
+      ])
+      allServerConfigs
     );
   };
 }
