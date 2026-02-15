@@ -64,6 +64,7 @@
   # MCP Sync Script Generation
   # ----------------------
   allServerConfigsJson = builtins.toJSON allServerConfigs;
+  desiredServersFile = pkgs.writeText "antigravity-desired-servers.json" allServerConfigsJson;
 
   mcpSyncScript = pkgs.writeShellScriptBin "antigravity-mcp-sync" ''
     set -euo pipefail
@@ -88,11 +89,8 @@
        echo "{}" > "$ANTIGRAVITY_CONFIG"
     fi
 
-    # Read the desired MCP servers configuration (generated at build time)
-    DESIRED_SERVERS='${allServerConfigsJson}'
-
     # Update the config file: replace mcpServers entirely with desired config
-    UPDATED_CONFIG=$($JQ --argjson servers "$DESIRED_SERVERS" '.mcpServers = $servers' "$ANTIGRAVITY_CONFIG")
+    UPDATED_CONFIG=$($JQ --slurpfile servers "${desiredServersFile}" '.mcpServers = $servers[0]' "$ANTIGRAVITY_CONFIG")
 
     # Write back atomically
     echo "$UPDATED_CONFIG" > "$ANTIGRAVITY_CONFIG.tmp"
@@ -100,7 +98,7 @@
 
     # List installed servers
     echo "Installed Antigravity MCP servers:"
-    echo "$DESIRED_SERVERS" | $JQ -r 'keys[]' | while read -r server; do
+    $JQ -r 'keys[]' "${desiredServersFile}" | while read -r server; do
       echo " - $server"
     done
 

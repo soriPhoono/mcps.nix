@@ -51,7 +51,22 @@ in {
            exit 1
         fi
 
-        echo "Activation script correctly contains antigravity-mcp-sync"
+        # Extract the path to the sync script
+        SYNC_SCRIPT_PATH=$(grep -o '/nix/store/[^"]*-antigravity-mcp-sync/bin/antigravity-mcp-sync' "$ACTIVATION_SCRIPT" | head -n1)
+
+        if [ -z "$SYNC_SCRIPT_PATH" ]; then
+           echo "Could not find antigravity-mcp-sync path in activation script"
+           exit 1
+        fi
+
+        if ! grep -q "antigravity-desired-servers.json" "$SYNC_SCRIPT_PATH"; then
+           echo "Sync script does not reference external JSON file (antigravity-desired-servers.json)"
+           echo "Content of $SYNC_SCRIPT_PATH:"
+           cat "$SYNC_SCRIPT_PATH"
+           exit 1
+        fi
+
+        echo "Activation script correctly contains antigravity-mcp-sync and uses external JSON file"
       '';
     }
     {
