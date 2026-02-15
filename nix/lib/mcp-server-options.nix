@@ -36,19 +36,6 @@ lib:
       ];
     };
 
-    disabled = lib.mkOption {
-      type = lib.types.bool;
-      description = lib.mdDoc "Whether this MCP server is disabled";
-      default = false;
-    };
-
-    timeoutMillis = lib.mkOption {
-      type = lib.types.nullOr lib.types.int;
-      description = lib.mdDoc "Timeout in milliseconds before killing the server";
-      default = null;
-      example = 3000;
-    };
-
     env = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       description = lib.mdDoc "Environment variables for the MCP server";
