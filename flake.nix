@@ -49,6 +49,15 @@
 
     systems.url = "github:nix-systems/default";
     systems.flake = false;
+
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    git-hooks-nix = {
+      url = "github:cachix/git-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs:
@@ -59,6 +68,8 @@
         inputs.devenv.flakeModule
         inputs.nixDir.flakeModule
         inputs.nixtest.flakeModule
+        inputs.treefmt-nix.flakeModule
+        inputs.git-hooks-nix.flakeModule
       ];
 
       nixDir = {
@@ -96,14 +107,11 @@
       perSystem = {
         self',
         pkgs,
+        lib,
         system,
         config,
         ...
       }: {
-        formatter = pkgs.nixfmt-rfc-style;
-
-
-
         nixtest.suites = {
           "home-manager/claude" = import ./tests/home-manager-claude-tests.nix {
             inherit inputs pkgs system;
@@ -130,30 +138,17 @@
           };
         };
 
-        devenv.shells.default = {
-          pkgs,
-          config,
-          lib,
-          ...
-        }: {
-          imports = [inputs.self.devenvModules.claude];
-
-          git-hooks.hooks = {
-            nixfmt-rfc-style.enable = true;
+        devShells.default = import ./shell.nix {
+          inherit lib pkgs;
+          config = {
+            inherit (config) pre-commit;
           };
-
-          devenv.root = let
-            ignored = pkgs.writeText "ignore" "";
-          in
-            lib.mkDefault (builtins.toString ./.);
-
-          claude.code = {
-            enable = true;
-            mcps.lsp-nix = {
-              enable = true;
-              workspace = config.devenv.root;
-            };
-          };
+        };
+        treefmt = import ./treefmt.nix {
+          inherit lib pkgs;
+        };
+        pre-commit = import ./pre-commit.nix {
+          inherit lib pkgs;
         };
       };
     };

@@ -1,0 +1,9 @@
+_: {
+  settings.hooks = {
+    nil.enable = true;
+    statix.enable = true;
+    deadnix.enable = true;
+
+    treefmt.enable = true;
+  };
+}
