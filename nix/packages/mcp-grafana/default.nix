@@ -2,9 +2,7 @@
   lib,
   buildGoModule,
   fetchFromGitHub,
-  versionCheckHook,
 }:
-
 buildGoModule (finalAttrs: {
   pname = "mcp-grafana";
   version = "0.4.2";
@@ -33,6 +31,6 @@ buildGoModule (finalAttrs: {
     homepage = "https://github.com/grafana/mcp-grafana";
     license = lib.licenses.asl20;
     mainProgram = "mcp-grafana";
-    maintainers = with lib.maintainers; [ roman ];
+    maintainers = with lib.maintainers; [roman];
   };
 })

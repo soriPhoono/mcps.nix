@@ -16,10 +16,8 @@
     systems.flake = false;
   };
 
-  outputs =
-    { flake-parts, ... }@inputs:
-    flake-parts.lib.mkFlake { inherit inputs; } {
-
+  outputs = {flake-parts, ...} @ inputs:
+    flake-parts.lib.mkFlake {inherit inputs;} {
       debug = true;
       systems = import inputs.systems;
 
@@ -27,65 +25,56 @@
         inputs.devenv.flakeModule
       ];
 
-      perSystem =
-        {
-          pkgs,
-          system,
-          self',
+      perSystem = {
+        system,
+        ...
+      }: {
+        _module.args.pkgs = import inputs.nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+          overlays = [
+            (_final: _prev: {flakeInputs = inputs;})
+            inputs.claude-code.overlays.default
+          ];
+        };
+
+        devenv.shells.default = {
           ...
-        }:
-        {
-          _module.args.pkgs = import inputs.nixpkgs {
-            inherit system;
-            config.allowUnfree = true;
-            overlays = [
-              (_final: _prev: { flakeInputs = inputs; })
-              inputs.claude-code.overlays.default
-            ];
-          };
+        }: {
+          imports = [
+            inputs.claude-code.devenvModules.claude-code
+          ];
 
-          devenv.shells.default =
-            {
-              pkgs,
-              lib,
-              config,
-              ...
-            }:
-            {
-              imports = [
-                inputs.claude-code.devenvModules.claude-code
-              ];
-
-              claude-code = {
+          claude-code = {
+            enable = true;
+            forceOverride = true;
+            supportEmacs = true;
+            mcp = {
+              asana = {
                 enable = true;
-                forceOverride = true;
-                supportEmacs = true;
-                mcp = {
-                  asana = {
-                    enable = true;
-                    tokenFilepath = "/var/run/agenix/asana.token";
-                  };
-                  github = {
-                    enable = true;
-                    baseURL = "https://git.company-dev.com";
-                    tokenFilepath = "/var/run/agenix/git.musta.ch.token";
-                  };
-                  grafana = {
-                    enable = true;
-                    baseURL = "https://localhost:3000";
-                    apiKeyFilepath = "/var/run/agenix/grafana-api.key";
-                    toolsets = [ "search" ];
-                  };
-                  fetch.enable = true;
-                  git.enable = true;
-                  sequential-thinking.enable = true;
-                  time = {
-                    enable = true;
-                    # localTimezone = "America/Vancouver";
-                  };
-                };
+                tokenFilepath = "/var/run/agenix/asana.token";
+              };
+              github = {
+                enable = true;
+                baseURL = "https://git.company-dev.com";
+                tokenFilepath = "/var/run/agenix/git.musta.ch.token";
+              };
+              grafana = {
+                enable = true;
+                baseURL = "https://localhost:3000";
+                apiKeyFilepath = "/var/run/agenix/grafana-api.key";
+                toolsets = ["search"];
+              };
+              fetch.enable = true;
+              git.enable = true;
+              sequential-thinking.enable = true;
+              time = {
+                enable = true;
+                # localTimezone = "America/Vancouver";
               };
             };
+          };
         };
+      };
     };
 }

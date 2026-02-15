@@ -3,10 +3,9 @@
   tools,
   pkgs,
   ...
-}:
-
-let
-  inherit (lib)
+}: let
+  inherit
+    (lib)
     mkOption
     mkEnableOption
     mkIf
@@ -16,41 +15,38 @@ let
   mcpServerOptionsType = import ./nix/lib/mcp-server-options.nix lib;
 
   # Helper to transform a simple preset definition into a full module
-  mkPresetModule =
-    {
-      name,
-      description ? "MCP integration for ${name}",
-      options ? { },
-      env ? (_: { }),
-      command,
-      args ? (_: [ ]),
-    }:
-    { config, ... }:
-    {
-      options = {
+  mkPresetModule = {
+    name,
+    description ? "MCP integration for ${name}",
+    options ? {},
+    env ? (_: {}),
+    command,
+    args ? (_: []),
+  }: {config, ...}: {
+    options =
+      {
         enable = mkEnableOption description;
 
         mcpServer = mkOption {
           type = lib.types.submodule mcpServerOptionsType;
-          default = { };
+          default = {};
           description = lib.mdDoc "MCP server configuration";
         };
       }
       // options;
 
-      config = mkIf config.enable {
-        mcpServer = {
-          type = "stdio";
-          inherit command;
-          args = args config;
-          env = builtins.mapAttrs (k: v: builtins.toString v) (env config);
-        };
+    config = mkIf config.enable {
+      mcpServer = {
+        type = "stdio";
+        inherit command;
+        args = args config;
+        env = builtins.mapAttrs (_k: v: builtins.toString v) (env config);
       };
     };
+  };
 
   # Simple preset definitions
   presets = {
-
     asana = {
       name = "Asana";
       command = tools.getToolPath "asana";
@@ -74,7 +70,7 @@ let
         allowedPaths = mkOption {
           type = types.nonEmptyListOf types.str;
           description = lib.mdDoc "List of allowed filepaths that your agent can explore";
-          example = [ "/Users/jdoe/Projects" ];
+          example = ["/Users/jdoe/Projects"];
         };
       };
     };
@@ -82,7 +78,7 @@ let
     git = {
       name = "Git";
       command = tools.getToolPath "git";
-      env = config: {
+      env = _config: {
         # Reset PYTHONPATH to avoid environmental dependencies affecting the runtime
         # of this application.
         PYTHONPATH = "";
@@ -92,8 +88,7 @@ let
     fetch = {
       name = "Fetch";
       command = tools.getToolPath "fetch";
-      args =
-        config:
+      args = config:
         (lib.optionals (config.userAgent != null) [
           "--user-agent"
           config.userAgent
@@ -102,8 +97,8 @@ let
           "--proxy-url"
           config.proxyURL
         ])
-        ++ (lib.optionals config.ignoreRobotsTxt [ "--ignore-robots-txt" ]);
-      env = config: {
+        ++ (lib.optionals config.ignoreRobotsTxt ["--ignore-robots-txt"]);
+      env = _config: {
         # Reset PYTHONPATH to avoid environmental dependencies affecting the runtime
         # of this application.
         PYTHONPATH = "";
@@ -138,13 +133,12 @@ let
     time = {
       name = "Time";
       command = tools.getToolPath "time";
-      args =
-        config:
+      args = config:
         lib.optionals (config.localTimezone != null) [
           "--local-timezone"
           config.localTimezone
         ];
-      env = config: {
+      env = _config: {
         # Reset PYTHONPATH to avoid environmental dependencies affecting the runtime
         # of this application.
         PYTHONPATH = "";
@@ -166,8 +160,7 @@ let
         "--toolsets"
         (builtins.concatStringsSep "," config.toolsets)
       ];
-      env =
-        config:
+      env = config:
         {
           GITHUB_PERSONAL_ACCESS_TOKEN_FILEPATH = config.tokenFilepath;
         }
@@ -224,13 +217,12 @@ let
     grafana = {
       name = "Grafana";
       command = tools.getToolPath "grafana";
-      args =
-        config:
+      args = config:
         [
           "-enabled-tools"
           (builtins.concatStringsSep "," config.toolsets)
         ]
-        ++ (lib.optionals config.debug [ "-debug" ]);
+        ++ (lib.optionals config.debug ["-debug"]);
 
       env = config: {
         GRAFANA_URL = config.baseURL;
@@ -286,7 +278,7 @@ let
     buildkite = {
       name = "Buildkite";
       command = tools.getToolPath "buildkite";
-      args = config: [ "stdio" ];
+      args = _config: ["stdio"];
       env = config: {
         BUILDKITE_API_TOKEN_FILEPATH = config.apiKeyFilepath;
       };
@@ -308,19 +300,29 @@ let
         "--lsp"
         config.lspPackage.meta.mainProgram
       ];
-      env =
-        config:
-        (
-          {
-            PATH = lib.makeBinPath [
-              config.lspPackage
-              config.goPackage
-            ];
-          }
-          // (if config.GOROOT != null then { GOROOT = config.GOROOT; } else { })
-          // (if config.GOCACHE != null then { GOCACHE = config.GOCACHE; } else { })
-          // (if config.GOMODCACHE != null then { GOMODCACHE = config.GOMODCACHE; } else { })
-        );
+      env = config: (
+        {
+          PATH = lib.makeBinPath [
+            config.lspPackage
+            config.goPackage
+          ];
+        }
+        // (
+          if config.GOROOT != null
+          then {inherit (config) GOROOT;}
+          else {}
+        )
+        // (
+          if config.GOCACHE != null
+          then {inherit (config) GOCACHE;}
+          else {}
+        )
+        // (
+          if config.GOMODCACHE != null
+          then {inherit (config) GOMODCACHE;}
+          else {}
+        )
+      );
 
       options = {
         lspPackage = mkOption {
@@ -369,11 +371,10 @@ let
         "--lsp"
         config.lspPackage.meta.mainProgram
       ];
-      env = config: {
-        PATH = lib.makeBinPath [ pkgs.typescript-language-server ];
+      env = _config: {
+        PATH = lib.makeBinPath [pkgs.typescript-language-server];
       };
       options = {
-
         lspPackage = mkOption {
           type = types.package;
           default = pkgs.typescript-language-server;
@@ -384,7 +385,6 @@ let
           type = types.str;
           description = "workspace where the lsp-server will run";
         };
-
       };
     };
 
@@ -401,11 +401,10 @@ let
       ];
 
       env = config: {
-        PATH = lib.makeBinPath [ config.lspPackage ];
+        PATH = lib.makeBinPath [config.lspPackage];
       };
 
       options = {
-
         lspPackage = mkOption {
           type = types.package;
           default = pkgs.pyright;
@@ -416,7 +415,6 @@ let
           type = types.str;
           description = "workspace where the lsp-server will run";
         };
-
       };
     };
 
@@ -431,11 +429,10 @@ let
       ];
 
       env = config: {
-        PATH = lib.makeBinPath [ config.lspPackage ];
+        PATH = lib.makeBinPath [config.lspPackage];
       };
 
       options = {
-
         lspPackage = mkOption {
           type = types.package;
           default = pkgs.rust-analyzer;
@@ -446,7 +443,6 @@ let
           type = types.str;
           description = "workspace where the lsp-server will run";
         };
-
       };
     };
 
@@ -461,11 +457,10 @@ let
       ];
 
       env = config: {
-        PATH = lib.makeBinPath [ config.lspPackage ];
+        PATH = lib.makeBinPath [config.lspPackage];
       };
 
       options = {
-
         lspPackage = mkOption {
           type = types.package;
           default = pkgs.nil;
@@ -476,7 +471,6 @@ let
           type = types.str;
           description = "workspace where the lsp-server will run";
         };
-
       };
     };
 
@@ -484,7 +478,7 @@ let
       name = "Obsidian";
       command = tools.getToolPath "obsidian";
 
-      args = config: [ ];
+      args = _config: [];
 
       env = config: {
         OBSIDIAN_API_KEY_FILEPATH = config.apiKeyFilepath;
@@ -493,7 +487,6 @@ let
       };
 
       options = {
-
         host = mkOption {
           type = types.str;
           description = lib.mdDoc "Host of the obisidan server";
@@ -511,7 +504,6 @@ let
           description = lib.mdDoc "File containing Obsidian Key";
           example = "/var/run/agenix/obisidian.key";
         };
-
       };
     };
 
@@ -519,8 +511,7 @@ let
       name = "ast-grep";
       description = "MCP server for ast-grep structural code search and transformation";
       command = tools.getToolPath "ast-grep";
-      args =
-        config:
+      args = config:
         lib.optionals (config.configFile != null) [
           "--config"
           config.configFile
@@ -538,12 +529,10 @@ let
     nixos = {
       name = "NixOS";
       command = tools.getToolPath "nixos";
-      args = _config: [ ];
-      env = _config: { };
-      options = { };
+      args = _config: [];
+      env = _config: {};
+      options = {};
     };
-
   };
-
 in
-lib.mapAttrs (_: mkPresetModule) presets
+  lib.mapAttrs (_: mkPresetModule) presets

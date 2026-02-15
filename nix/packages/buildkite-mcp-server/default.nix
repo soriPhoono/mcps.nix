@@ -3,7 +3,6 @@
   buildGoModule,
   fetchFromGitHub,
 }:
-
 buildGoModule (finalAttrs: {
   pname = "buildkite-mcp-server";
   version = "0.4.1";
@@ -19,7 +18,7 @@ buildGoModule (finalAttrs: {
 
   env.CGO_ENABLED = 0;
 
-  patches = [ ./buildkite-mcp.patch ];
+  patches = [./buildkite-mcp.patch];
 
   ldflags = [
     "-s"
@@ -35,6 +34,6 @@ buildGoModule (finalAttrs: {
     homepage = "https://github.com/buildkite/buildkite-mcp-server";
     license = lib.licenses.mit;
     mainProgram = "buildkite-mcp-server";
-    maintainers = with lib.maintainers; [ roman ];
+    maintainers = with lib.maintainers; [roman];
   };
 })

@@ -3,10 +3,9 @@
   lib,
   pkgs,
   ...
-}:
-
-let
-  inherit (lib)
+}: let
+  inherit
+    (lib)
     mkOption
     mkIf
     types
@@ -22,7 +21,7 @@ let
   # ----------------------
   baseTools = import ../../../../tools.nix {
     inherit pkgs lib;
-    inputs = { };
+    inputs = {};
   };
 
   # ----------------------
@@ -34,64 +33,63 @@ let
     tools = baseTools;
   };
 
-  presetOptionTypes = lib.mapAttrs (
-    name: preset:
-    lib.mkOption {
-      type = lib.types.submodule preset;
-      default = { };
-      description = lib.mdDoc (preset.meta.description or "MCP preset for ${name}");
-    }
-  ) presetDefinitions;
+  presetOptionTypes =
+    lib.mapAttrs (
+      name: preset:
+        lib.mkOption {
+          type = lib.types.submodule preset;
+          default = {};
+          description = lib.mdDoc (preset.meta.description or "MCP preset for ${name}");
+        }
+    )
+    presetDefinitions;
 
   # ----------------------
   # Server Configuration Management
   # ----------------------
-  enabledPresetServers =
-    let
-      enabledPresets = lib.filterAttrs (name: preset: name != "servers" && preset.enable) cfg;
-    in
+  enabledPresetServers = let
+    enabledPresets = lib.filterAttrs (name: preset: name != "servers" && preset.enable) cfg;
+  in
     lib.mapAttrs (_: preset: preset.mcpServer) enabledPresets;
-
-in
-{
+in {
   options.claude.code.mcps = mkOption {
     type = types.submodule {
       imports = [
         (
-          (
-            { config, ... }:
-            {
-              options = presetOptionTypes // {
+          _: {
+            options =
+              presetOptionTypes
+              // {
                 servers = mkOption {
                   type = types.attrsOf (types.submodule mcpServerOptionsType);
-                  default = { };
+                  default = {};
                   description = lib.mdDoc "Custom MCP server configurations";
                 };
               };
-            }
-          )
+          }
         )
       ];
     };
-    default = { };
+    default = {};
     description = lib.mdDoc "MCP server configurations";
   };
 
   config = mkIf claudeCfg.enable {
     claude.code.mcpServers = foldl' (
       acc: presetName:
-      acc
-      // {
-        "${presetName}" = {
-          inherit (enabledPresetServers.${presetName})
-            command
-            args
-            env
-            type
-            url
-            ;
-        };
-      }
-    ) { } (attrNames enabledPresetServers);
+        acc
+        // {
+          "${presetName}" = {
+            inherit
+              (enabledPresetServers.${presetName})
+              command
+              args
+              env
+              type
+              url
+              ;
+          };
+        }
+    ) {} (attrNames enabledPresetServers);
   };
 }

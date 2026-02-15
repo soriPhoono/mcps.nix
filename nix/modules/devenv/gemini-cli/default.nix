@@ -3,9 +3,7 @@
   config,
   lib,
   ...
-}:
-
-let
+}: let
   cfg = config.gemini.cli;
 
   # ----------------------
@@ -13,9 +11,9 @@ let
   # ----------------------
   baseTools = import ../../../../tools.nix {
     inherit pkgs lib;
-    inputs = { };
+    inputs = {};
   };
-  extendedTools = baseTools.extend (cfg.extraTools or { });
+  extendedTools = baseTools.extend (cfg.extraTools or {});
 
   # ----------------------
   # Preset Management
@@ -26,42 +24,41 @@ let
     tools = extendedTools;
   };
 
-  presetOptionTypes = lib.mapAttrs (
-    name: preset:
-    lib.mkOption {
-      type = lib.types.submodule preset;
-      default = { };
-      description = lib.mdDoc (preset.meta.description or "MCP preset for ${name}");
-    }
-  ) presetDefinitions;
+  presetOptionTypes =
+    lib.mapAttrs (
+      name: preset:
+        lib.mkOption {
+          type = lib.types.submodule preset;
+          default = {};
+          description = lib.mdDoc (preset.meta.description or "MCP preset for ${name}");
+        }
+    )
+    presetDefinitions;
 
   # ----------------------
   # Server Configuration Management
   # ----------------------
-  enabledPresetServers =
-    let
-      enabledPresets = lib.filterAttrs (name: preset: name != "servers" && preset.enable) cfg.mcps;
-    in
+  enabledPresetServers = let
+    enabledPresets = lib.filterAttrs (name: preset: name != "servers" && preset.enable) cfg.mcps;
+  in
     lib.mapAttrs (_: preset: preset.mcpServer) enabledPresets;
 
   allServerConfigs = enabledPresetServers // cfg.mcps.servers;
-  allServerConfigsJson = builtins.toJSON { mcpServers = allServerConfigs; };
-
-in
-{
+  allServerConfigsJson = builtins.toJSON {mcpServers = allServerConfigs;};
+in {
   options.gemini.cli = {
     enable = lib.mkEnableOption "gemini-cli";
 
     extraTools = lib.mkOption {
       type = lib.types.attrs;
-      default = { };
+      default = {};
       description = lib.mdDoc "Extra tools to make available to the MCP presets";
     };
 
     mcpServers = lib.mkOption {
       type = lib.types.attrsOf (lib.types.submodule mcpServerOptionsType);
       internal = true;
-      default = { };
+      default = {};
       description = lib.mdDoc "Computed MCP servers configuration (internal)";
     };
 
@@ -69,22 +66,21 @@ in
       type = lib.types.submodule {
         imports = [
           (
-            (
-              { config, ... }:
-              {
-                options = presetOptionTypes // {
+            _: {
+              options =
+                presetOptionTypes
+                // {
                   servers = lib.mkOption {
                     type = lib.types.attrsOf (lib.types.submodule mcpServerOptionsType);
-                    default = { };
+                    default = {};
                     description = lib.mdDoc "Custom MCP server configurations";
                   };
                 };
-              }
-            )
+            }
           )
         ];
       };
-      default = { };
+      default = {};
       description = lib.mdDoc "MCP server configurations";
     };
   };
@@ -92,21 +88,21 @@ in
   config = lib.mkIf cfg.enable {
     gemini.cli.mcpServers = allServerConfigs;
 
-    packages = [ pkgs.gemini-cli ];
+    packages = [pkgs.gemini-cli];
 
     enterShell = ''
       # Generate .gemini/settings.json
       if [ ! -d .gemini ]; then
         mkdir .gemini
       fi
-      
+
       GEMINI_CONFIG=".gemini/settings.json"
-      
+
       # Use jq to update the config, creating it if missing
       if [ ! -f "$GEMINI_CONFIG" ]; then
         echo "{}" > "$GEMINI_CONFIG"
       fi
-      
+
       # Validate existing config
       if ! ${pkgs.jq}/bin/jq empty "$GEMINI_CONFIG" 2>/dev/null; then
          echo "{}" > "$GEMINI_CONFIG"
@@ -114,7 +110,7 @@ in
 
       # Update settings
       ${pkgs.jq}/bin/jq --argjson desired '${allServerConfigsJson}' '. * $desired' "$GEMINI_CONFIG" > "$GEMINI_CONFIG.tmp" && mv "$GEMINI_CONFIG.tmp" "$GEMINI_CONFIG"
-      
+
       echo "Configured gemini-cli MCP servers in .gemini/settings.json"
     '';
   };

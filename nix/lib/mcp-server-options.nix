@@ -1,6 +1,4 @@
-lib:
-{ config, ... }:
-{
+lib: _: {
   options = {
     type = lib.mkOption {
       type = lib.types.enum [
@@ -28,7 +26,7 @@ lib:
     args = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       description = lib.mdDoc "Arguments to pass to the command";
-      default = [ ];
+      default = [];
       example = [
         "mcp"
         "start"
@@ -39,7 +37,7 @@ lib:
     env = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       description = lib.mdDoc "Environment variables for the MCP server";
-      default = { };
+      default = {};
       example = {
         ASANA_ACCESS_TOKEN = "your-token-here";
       };

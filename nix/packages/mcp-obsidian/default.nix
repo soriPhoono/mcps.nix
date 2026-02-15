@@ -3,14 +3,11 @@
   callPackage,
   callPackages,
   fetchFromGitHub,
-
   uv2nix,
   pyproject,
   pyproject-build-systems,
   python311,
-}:
-
-let
+}: let
   src = fetchFromGitHub {
     owner = "MarkusPfundstein";
     repo = "mcp-obsidian";
@@ -30,16 +27,16 @@ let
     (callPackage pyproject.build.packages {
       python = python311;
     }).overrideScope
-      (
-        lib.composeManyExtensions [
-          pyproject-build-systems.overlays.default
-          workspaceOverlay
-        ]
-      );
+    (
+      lib.composeManyExtensions [
+        pyproject-build-systems.overlays.default
+        workspaceOverlay
+      ]
+    );
 
-  inherit (callPackages pyproject.build.util { }) mkApplication;
+  inherit (callPackages pyproject.build.util {}) mkApplication;
 in
-mkApplication {
-  venv = pythonSet.mkVirtualEnv "mcp-obsidian-venv" workspace.deps.default;
-  package = pythonSet.mcp-obsidian;
-}
+  mkApplication {
+    venv = pythonSet.mkVirtualEnv "mcp-obsidian-venv" workspace.deps.default;
+    package = pythonSet.mcp-obsidian;
+  }

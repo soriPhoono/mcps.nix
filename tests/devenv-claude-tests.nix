@@ -3,9 +3,7 @@
   pkgs,
   system,
   ...
-}:
-
-let
+}: let
   apiKeyFilepath = "file.token";
   config = inputs.devenv.lib.mkConfig {
     inherit inputs;
@@ -28,8 +26,7 @@ let
       }
     ];
   };
-in
-{
+in {
   tests = [
     {
       name = "command";
@@ -41,7 +38,7 @@ in
         if [[ "$CMD_ACTUAL" != "$CMD_EXPECTED" ]]; then
            echo "claude does not have mcp server configured"
            exit 1
-        fi 
+        fi
       '';
     }
     {
@@ -55,7 +52,7 @@ in
     {
       name = "args";
       type = "unit";
-      expected = [ "stdio" ];
+      expected = ["stdio"];
       actual = config.claude.code.mcpServers.buildkite.args;
     }
   ];

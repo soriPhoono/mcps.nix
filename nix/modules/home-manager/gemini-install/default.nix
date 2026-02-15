@@ -121,7 +121,7 @@ in {
     type = types.submodule {
       imports = [
         (
-          {config, ...}: {
+          _: {
             options =
               presetOptionTypes
               // {

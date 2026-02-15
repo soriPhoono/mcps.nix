@@ -1,11 +1,8 @@
 {
   inputs,
-  pkgs,
   system,
   ...
-}:
-
-let
+}: let
   apiKeyFilepath = "file.token";
   config = inputs.devenv.lib.mkConfig {
     inherit inputs;
@@ -27,14 +24,13 @@ let
           mcps.git.enable = true;
           mcps.filesystem = {
             enable = true;
-            allowedPaths = [ "/tmp" ];
+            allowedPaths = ["/tmp"];
           };
         };
       }
     ];
   };
-in
-{
+in {
   tests = [
     {
       name = "command";
@@ -45,7 +41,7 @@ in
         if [[ -z "$CMD_BUILDKITE" ]]; then
            echo "gemini-cli buildkite mcp server not configured"
            exit 1
-        fi 
+        fi
 
         # Check git
         CMD_GIT="${config.gemini.cli.mcpServers.git.command}"
@@ -66,7 +62,7 @@ in
         if [[ "$FS_ARGS" != "/tmp" ]]; then
            echo "gemini-cli filesystem mcp server args incorrect: $FS_ARGS"
            exit 1
-        fi 
+        fi
       '';
     }
     {
@@ -80,7 +76,7 @@ in
     {
       name = "args";
       type = "unit";
-      expected = [ "stdio" ];
+      expected = ["stdio"];
       actual = config.gemini.cli.mcpServers.buildkite.args;
     }
   ];

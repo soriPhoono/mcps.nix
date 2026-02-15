@@ -2,18 +2,17 @@
   pkgs,
   lib,
   inputs,
-  extraTools ? { },
-}:
+  extraTools ? {},
+}: let
+  wrapWithCredentialFiles = pkgs.callPackage ./nix/lib/wrapWithCredentialFiles.nix {};
 
-let
-  wrapWithCredentialFiles = pkgs.callPackage ./nix/lib/wrapWithCredentialFiles.nix { };
-
-  mkTool =
-    { package, binary }:
-    {
-      inherit package binary;
-      path = "${lib.getBin package}/bin/${binary}";
-    };
+  mkTool = {
+    package,
+    binary,
+  }: {
+    inherit package binary;
+    path = "${lib.getBin package}/bin/${binary}";
+  };
 
   toolsFunctions = {
     # Helper to map credential environment variables to files containing credentials
@@ -23,45 +22,36 @@ let
     inherit mkTool;
 
     # Function to get a tool by name, with error checking
-    getTool =
-      name:
-      let
-        tool = builtins.getAttr name tools;
-      in
-      if tool.package == null then
-        throw "Tool ${name} is not available in your mcp tools configuration"
-      else
-        tool.package;
+    getTool = name: let
+      tool = builtins.getAttr name tools;
+    in
+      if tool.package == null
+      then throw "Tool ${name} is not available in your mcp tools configuration"
+      else tool.package;
 
     # Function to get a tool's command path
-    getToolPath =
-      name:
-      let
-        tool = builtins.getAttr name tools;
-      in
-      if tool.package == null then
-        throw "Tool ${name} is not available in your mcp tools configuration"
-      else
-        tool.path;
+    getToolPath = name: let
+      tool = builtins.getAttr name tools;
+    in
+      if tool.package == null
+      then throw "Tool ${name} is not available in your mcp tools configuration"
+      else tool.path;
 
     # Function to create a new tools set with additional tools
-    extend =
-      newExtraTools:
+    extend = newExtraTools:
       import ./tools.nix {
         inherit pkgs lib inputs;
         extraTools = extraTools // newExtraTools;
       };
-
   };
 
   baseTools = {
-
     asana = mkTool {
       # Override vanilla mpc-server-asana with script that allow us to read credentials from
       # a file and populate it on the ASANA_ACCESS_TOKEN.
       package = wrapWithCredentialFiles {
         package = pkgs.mcp-server-asana;
-        credentialEnvs = [ "ASANA_ACCESS_TOKEN" ];
+        credentialEnvs = ["ASANA_ACCESS_TOKEN"];
       };
       binary = "mcp-server-asana";
     };
@@ -71,7 +61,7 @@ let
       # from a file and populate it on the GITHUB_PERSONAL_ACCESS_TOKEN.
       package = wrapWithCredentialFiles {
         package = pkgs.github-mcp-server;
-        credentialEnvs = [ "GITHUB_PERSONAL_ACCESS_TOKEN" ];
+        credentialEnvs = ["GITHUB_PERSONAL_ACCESS_TOKEN"];
       };
       binary = "github-mcp-server";
     };
@@ -79,7 +69,7 @@ let
     grafana = mkTool {
       package = wrapWithCredentialFiles {
         package = pkgs.mcp-grafana;
-        credentialEnvs = [ "GRAFANA_API_KEY" ];
+        credentialEnvs = ["GRAFANA_API_KEY"];
       };
       binary = "mcp-grafana";
     };
@@ -112,7 +102,7 @@ let
     buildkite = mkTool {
       package = wrapWithCredentialFiles {
         package = pkgs.buildkite-mcp-server;
-        credentialEnvs = [ "BUILDKITE_API_TOKEN" ];
+        credentialEnvs = ["BUILDKITE_API_TOKEN"];
       };
       binary = "buildkite-mcp-server";
     };
@@ -125,7 +115,7 @@ let
     obsidian = mkTool {
       package = wrapWithCredentialFiles {
         package = pkgs.mcp-obsidian;
-        credentialEnvs = [ "OBSIDIAN_API_KEY" ];
+        credentialEnvs = ["OBSIDIAN_API_KEY"];
       };
       binary = "mcp-obsidian";
     };
@@ -139,11 +129,9 @@ let
       package = inputs.mcp-nixos.packages.${pkgs.system}.default;
       binary = "mcp-nixos";
     };
-
   };
 
   # Combined tools (base + extra)
   tools = baseTools // extraTools;
-
 in
-tools // toolsFunctions
+  tools // toolsFunctions

@@ -5,14 +5,11 @@
   fetchFromGitHub,
   makeWrapper,
   ast-grep,
-
   uv2nix,
   pyproject,
   pyproject-build-systems,
   python313,
-}:
-
-let
+}: let
   src = fetchFromGitHub {
     owner = "ast-grep";
     repo = "ast-grep-mcp";
@@ -32,33 +29,35 @@ let
     (callPackage pyproject.build.packages {
       python = python313;
     }).overrideScope
-      (
-        lib.composeManyExtensions [
-          pyproject-build-systems.overlays.default
-          workspaceOverlay
-        ]
-      );
+    (
+      lib.composeManyExtensions [
+        pyproject-build-systems.overlays.default
+        workspaceOverlay
+      ]
+    );
 
-  inherit (callPackages pyproject.build.util { }) mkApplication;
+  inherit (callPackages pyproject.build.util {}) mkApplication;
 
   app = mkApplication {
     venv = pythonSet.mkVirtualEnv "ast-grep-mcp-venv" workspace.deps.default;
     package = pythonSet.sg-mcp;
   };
 in
-# Wrap the application to include ast-grep CLI in PATH
-app.overrideAttrs (oldAttrs: {
-  nativeBuildInputs = (oldAttrs.nativeBuildInputs or [ ]) ++ [ makeWrapper ];
-  postFixup = ''
-    ${oldAttrs.postFixup or ""}
-    wrapProgram $out/bin/ast-grep-server \
-      --prefix PATH : ${lib.makeBinPath [ ast-grep ]}
-  '';
+  # Wrap the application to include ast-grep CLI in PATH
+  app.overrideAttrs (oldAttrs: {
+    nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [makeWrapper];
+    postFixup = ''
+      ${oldAttrs.postFixup or ""}
+      wrapProgram $out/bin/ast-grep-server \
+        --prefix PATH : ${lib.makeBinPath [ast-grep]}
+    '';
 
-  meta = (oldAttrs.meta or { }) // {
-    description = "MCP server for ast-grep structural code search";
-    homepage = "https://github.com/ast-grep/ast-grep-mcp";
-    license = lib.licenses.mit;
-    mainProgram = "ast-grep-server";
-  };
-})
+    meta =
+      (oldAttrs.meta or {})
+      // {
+        description = "MCP server for ast-grep structural code search";
+        homepage = "https://github.com/ast-grep/ast-grep-mcp";
+        license = lib.licenses.mit;
+        mainProgram = "ast-grep-server";
+      };
+  })

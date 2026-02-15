@@ -3,9 +3,7 @@
   pkgs,
   system,
   ...
-}:
-
-let
+}: let
   apiKeyFilepath = "file.token";
   result = inputs.home-manager-unstable.lib.homeManagerConfiguration {
     pkgs = import inputs.nixpkgs-unstable {
@@ -30,23 +28,22 @@ let
           mcps.git.enable = true;
           mcps.filesystem = {
             enable = true;
-            allowedPaths = [ "/tmp" ];
+            allowedPaths = ["/tmp"];
           };
         };
       }
     ];
   };
-in
-{
+in {
   tests = [
     {
       name = "command";
       type = "script";
       script = ''
-        ${(inputs.nixtest.lib { inherit pkgs; }).helpers.scriptHelpers}
+        ${(inputs.nixtest.lib {inherit pkgs;}).helpers.scriptHelpers}
         # We can verify the JSON content generated in the files.
         CONFIG_JSON="${result.config.home.file.".gemini/settings.json".text}"
-        
+
         # Check buildkite
         CMD_BUILDKITE=$(echo "$CONFIG_JSON" | ${pkgs.jq}/bin/jq -r '.mcpServers.buildkite.command')
         if [[ -z "$CMD_BUILDKITE" || "$CMD_BUILDKITE" == "null" ]]; then
@@ -67,7 +64,7 @@ in
            echo "gemini filesystem mcp server not configured"
            exit 1
         fi
-        
+
         # Check filesystem args
         FS_ARGS=$(echo "$CONFIG_JSON" | ${pkgs.jq}/bin/jq -r '.mcpServers.filesystem.args[0]')
         if [[ "$FS_ARGS" != "/tmp" ]]; then
@@ -87,7 +84,7 @@ in
     {
       name = "args";
       type = "unit";
-      expected = [ "stdio" ];
+      expected = ["stdio"];
       actual = result.config.programs.gemini-cli.settings.mcpServers.buildkite.args;
     }
   ];

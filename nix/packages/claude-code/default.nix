@@ -4,7 +4,6 @@
   fetchzip,
   nodejs_20,
 }:
-
 buildNpmPackage rec {
   pname = "claude-code";
   version = "1.0.113";

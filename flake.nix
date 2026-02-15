@@ -86,7 +86,7 @@
       };
 
       flake.overlays = {
-        development = _final: prev: {
+        development = _final: _prev: {
           inherit (inputs) uv2nix pyproject pyproject-build-systems;
         };
         default = _final: prev: {
@@ -105,7 +105,6 @@
       };
 
       perSystem = {
-        self',
         pkgs,
         lib,
         system,

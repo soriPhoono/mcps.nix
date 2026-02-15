@@ -3,10 +3,9 @@
   lib,
   pkgs,
   ...
-}:
-
-let
-  inherit (lib)
+}: let
+  inherit
+    (lib)
     mkOption
     mkIf
     types
@@ -20,9 +19,9 @@ let
   # ----------------------
   baseTools = import ../../../../tools.nix {
     inherit pkgs lib;
-    inputs = { };
+    inputs = {};
   };
-  extendedTools = baseTools.extend (cfg.extraTools or { });
+  extendedTools = baseTools.extend (cfg.extraTools or {});
 
   # ----------------------
   # Preset Management
@@ -33,22 +32,23 @@ let
     tools = extendedTools;
   };
 
-  presetOptionTypes = lib.mapAttrs (
-    name: preset:
-    mkOption {
-      type = lib.types.submodule preset;
-      default = { };
-      description = lib.mdDoc (preset.meta.description or "MCP preset for ${name}");
-    }
-  ) presetDefinitions;
+  presetOptionTypes =
+    lib.mapAttrs (
+      name: preset:
+        mkOption {
+          type = lib.types.submodule preset;
+          default = {};
+          description = lib.mdDoc (preset.meta.description or "MCP preset for ${name}");
+        }
+    )
+    presetDefinitions;
 
   # ----------------------
   # Server Configuration Management
   # ----------------------
-  enabledPresetServers =
-    let
-      enabledPresets = lib.filterAttrs (name: preset: name != "servers" && preset.enable) cfg.mcps;
-    in
+  enabledPresetServers = let
+    enabledPresets = lib.filterAttrs (name: preset: name != "servers" && preset.enable) cfg.mcps;
+  in
     lib.mapAttrs (_: preset: preset.mcpServer) enabledPresets;
 
   allServerConfigs = enabledPresetServers // cfg.mcps.servers;
@@ -96,35 +96,31 @@ let
 
     echo "MCP servers synchronization completed!"
   '';
-
-in
-{
+in {
   options.programs.claude-code.mcps = mkOption {
     type = types.submodule {
       imports = [
         (
-          (
-            { config, ... }:
-            {
-              options = presetOptionTypes // {
+          _: {
+            options =
+              presetOptionTypes
+              // {
                 servers = mkOption {
                   type = types.attrsOf (types.submodule mcpServerOptionsType);
-                  default = { };
+                  default = {};
                   description = lib.mdDoc "Custom MCP server configurations";
                 };
               };
-            }
-          )
+          }
         )
       ];
     };
-    default = { };
+    default = {};
     description = lib.mdDoc "MCP server configurations";
   };
 
   config = mkIf claudeCfg.enable {
-
-    home.activation.mcpSync = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    home.activation.mcpSync = lib.hm.dag.entryAfter ["writeBoundary"] ''
       $DRY_RUN_CMD ${mcpSyncScript}/bin/mcp-sync
     '';
 
@@ -138,7 +134,8 @@ in
           assertion = (serverCfg.type != "sse") || (serverCfg.url != "");
           message = "URL must be specified when type is 'sse' for MCP server '${name}'";
         }
-      ]) allServerConfigs
+      ])
+      allServerConfigs
     );
   };
 }

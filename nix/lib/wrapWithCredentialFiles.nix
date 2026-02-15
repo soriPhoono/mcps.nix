@@ -3,9 +3,7 @@
   writeShellScript,
   symlinkJoin,
   makeBinaryWrapper,
-}:
-
-let
+}: let
   # wrapWithCredentialFiles: Creates a wrapper for each binary in a derivation that
   # reads credentials from files and injects them as environment variables.
   #
@@ -20,63 +18,60 @@ let
   #  my-program
   # or with credentials from files:
   #  API_KEY_FILEPATH=/path/to/api-key AUTH_TOKEN_FILEPATH=/path/to/token my-program
-  wrapWithCredentialFiles =
-    {
-      package,
-      credentialEnvs,
-      extraEnv ? { },
-      name ? "${package.name}-with-creds",
-    }:
-    let
-      # Generate the wrapper script for a binary
-      generateWrapper =
-        binary:
-        writeShellScript "${binary}-credential-wrapper" ''
-          # Function to safely read a file and strip trailing newlines
-          read_cred_file() {
-            if [[ -r "$1" ]]; then
-              # Read file content and remove trailing newline
-              content=$(cat "$1" | tr -d '\r' | tr -d '\n')
-              echo "$content"
-            else
-              echo "Warning: Cannot read credential file: $1" >&2
-              echo ""
-            fi
-          }
+  wrapWithCredentialFiles = {
+    package,
+    credentialEnvs,
+    extraEnv ? {},
+    name ? "${package.name}-with-creds",
+  }: let
+    # Generate the wrapper script for a binary
+    generateWrapper = binary:
+      writeShellScript "${binary}-credential-wrapper" ''
+        # Function to safely read a file and strip trailing newlines
+        read_cred_file() {
+          if [[ -r "$1" ]]; then
+            # Read file content and remove trailing newline
+            content=$(cat "$1" | tr -d '\r' | tr -d '\n')
+            echo "$content"
+          else
+            echo "Warning: Cannot read credential file: $1" >&2
+            echo ""
+          fi
+        }
 
-          ${lib.concatMapStringsSep "\n" (env: ''
+        ${lib.concatMapStringsSep "\n" (env: ''
             # If filepath variable is set, read the file and set the actual env var
             if [[ -n "''${${env}_FILEPATH+x}" ]]; then
               export ${env}="$(read_cred_file "''${${env}_FILEPATH}")"
             fi
-          '') credentialEnvs}
+          '')
+          credentialEnvs}
 
-          # Execute the original binary with all arguments
-          exec "${package}/bin/${binary}" "$@"
-        '';
+        # Execute the original binary with all arguments
+        exec "${package}/bin/${binary}" "$@"
+      '';
 
-      # Find all binaries in the package
-      binaries =
-        if package ? meta.mainProgram && package.meta.mainProgram != null then
-          [ package.meta.mainProgram ]
-        else
-          builtins.attrNames (builtins.readDir "${package}/bin");
+    # Find all binaries in the package
+    binaries =
+      if package ? meta.mainProgram && package.meta.mainProgram != null
+      then [package.meta.mainProgram]
+      else builtins.attrNames (builtins.readDir "${package}/bin");
 
-      # Create wrappers for each binary
-      wrappers = lib.listToAttrs (
-        map (binary: {
-          name = binary;
-          value = {
-            original = "${package}/bin/${binary}";
-            wrapped = generateWrapper binary;
-          };
-        }) binaries
-      );
-
-    in
+    # Create wrappers for each binary
+    wrappers = lib.listToAttrs (
+      map (binary: {
+        name = binary;
+        value = {
+          original = "${package}/bin/${binary}";
+          wrapped = generateWrapper binary;
+        };
+      })
+      binaries
+    );
+  in
     symlinkJoin {
       inherit name;
-      paths = [ package ];
+      paths = [package];
 
       # Create the bin directory with wrappers
       postBuild = ''
@@ -101,7 +96,7 @@ let
         # Restore all the saved directories
         if [ -d "$TMPDIR/saved" ]; then
           find "$TMPDIR/saved" -mindepth 1 -maxdepth 1 -not -name "top_level_files" -exec mv {} $out/ \;
-          
+
           # Restore top-level files
           if [ -d "$TMPDIR/saved/top_level_files" ]; then
             find "$TMPDIR/saved/top_level_files" -mindepth 1 -maxdepth 1 -exec mv {} $out/ \;
@@ -113,11 +108,12 @@ let
 
         # Link all wrapped binaries
         ${lib.concatMapStringsSep "\n" (binary: ''
-          ln -s ${wrappers.${binary}.wrapped} $out/bin/${binary}
-        '') binaries}
+            ln -s ${wrappers.${binary}.wrapped} $out/bin/${binary}
+          '')
+          binaries}
 
         # Handle any other environment variables we want to permanently set
-        ${lib.optionalString (extraEnv != { }) (
+        ${lib.optionalString (extraEnv != {}) (
           lib.concatStringsSep "\n" (
             lib.mapAttrsToList (name: value: ''
               # Use makeBinaryWrapper to add permanent env vars
@@ -126,13 +122,14 @@ let
                   wrapProgram "$bin" --set ${name} "${value}"
                 fi
               done
-            '') extraEnv
+            '')
+            extraEnv
           )
         )}
       '';
 
       # Ensure makeBinaryWrapper is available if we use extraEnv
-      nativeBuildInputs = lib.optional (extraEnv != { }) makeBinaryWrapper;
+      nativeBuildInputs = lib.optional (extraEnv != {}) makeBinaryWrapper;
 
       # Preserve metadata from original package
       inherit (package) meta;
@@ -144,4 +141,4 @@ let
       };
     };
 in
-wrapWithCredentialFiles
+  wrapWithCredentialFiles
